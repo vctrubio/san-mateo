@@ -56,7 +56,44 @@ export default function DebugPlan() {
           ))}
         </div>
 
-        {/* Future Integrations */}
+        {/* Future Integrations & Role Architecture */}
+        <div className="mt-24 pt-12 border-t border-slate-200/60">
+          <div className="flex items-center gap-3 mb-10">
+            <Settings className="w-4 h-4 text-slate-400" />
+            <span className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400">Role & Access Architecture</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-2 h-2 bg-purple-500 rounded-full" />
+                <h5 className="text-sm font-bold text-slate-900 uppercase">Owner</h5>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Full visibility into estate performance, financial reports, and strategic overrides.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/admin/owner</code>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                <h5 className="text-sm font-bold text-slate-900 uppercase">Admin / Staff</h5>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Operational dashboard for cleaning schedules, maintenance, and booking management.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/admin/ops</code>
+            </div>
+
+            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-2 h-2 bg-green-500 rounded-full" />
+                <h5 className="text-sm font-bold text-slate-900 uppercase">Guest</h5>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Personalized portal for booking details, house rules, and direct concierge access.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/guest/portal</code>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Stack Summary */}
         <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-slate-200/60">
           <div className="flex items-start gap-4">
             <CreditCard className="w-5 h-5 text-slate-400 mt-1" />
