@@ -1,5 +1,4 @@
 import HeroLanding from "@/components/HeroLanding";
-import DebugColorPanel from "@/components/DebugColorPanel";
 import PropertyShowcase from "@/components/PropertyShowcase";
 import AboutSection from "@/components/AboutSection";
 import PropertyAvailability from "@/components/PropertyAvailability";
@@ -12,7 +11,6 @@ export default function Home() {
       <PropertyShowcase />
       <PropertyAvailability />
       <AboutSection />
-      {/* <DebugColorPanel /> */}
       <Footer />
     </main>
   );

@@ -1,21 +1,33 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar as CalendarIcon, Users, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, X, Moon, PawPrint, Baby } from 'lucide-react';
+import { Calendar as CalendarIcon, Users, ArrowRight, ChevronDown, ChevronLeft, ChevronRight, X, Moon, Home, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, startOfDay, addDays, isBefore, differenceInDays } from 'date-fns';
+import { checkPropertyAvailability, getAllProperties, createInitialBooking, getBusyDates } from '@/app/actions/booking';
 
 export default function PropertyAvailability() {
   const [dates, setDates] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [activePopover, setActivePopover] = useState<'dates' | 'guests' | null>(null);
+  const [activePopover, setActivePopover] = useState<'dates' | 'guests' | 'properties' | null>(null);
+  const [properties, setProperties] = useState<any[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
+  const [busyDates, setBusyDates] = useState<Date[]>([]);
+  const [bookingSuccess, setBookingSuccess] = useState<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [config, setConfig] = useState({
-    adults: 2, children: 0, babies: 0, needsCrib: false, hasPets: false, dogs: 0, cats: 0, otherPet: ''
+    adults: 2, children: 0, babies: 0, needsCrib: false, hasPets: false, dogs: 0, cats: 0
   });
 
   useEffect(() => {
+    getAllProperties().then(data => {
+      setProperties(data as any[]);
+      if (data.length > 0) setSelectedProperty(data[0]);
+    });
+
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setActivePopover(null);
@@ -25,18 +37,53 @@ export default function PropertyAvailability() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (selectedProperty) {
+      getBusyDates(selectedProperty.id, currentMonth).then(dates => {
+        setBusyDates(dates);
+      });
+    }
+  }, [selectedProperty, currentMonth]);
+
+  useEffect(() => {
+    if (dates.start && dates.end && selectedProperty) {
+      setIsChecking(true);
+      checkPropertyAvailability(selectedProperty.id, dates.start, dates.end).then(available => {
+        setIsAvailable(available);
+        setIsChecking(false);
+      });
+    } else {
+      setIsAvailable(null);
+    }
+  }, [dates, selectedProperty]);
+
   const totalGuests = config.adults + config.children + config.babies;
 
   const handleDateClick = (day: Date) => {
     if (!dates.start || (dates.start && dates.end)) {
       setDates({ start: day, end: null });
     } else if (isBefore(day, dates.start) || isSameDay(day, dates.start)) {
-      // If clicking same day or before, reset start to this day
       setDates({ start: day, end: null });
     } else {
-      // End date must be at least 1 day after start
       setDates({ ...dates, end: day });
       setTimeout(() => setActivePopover('guests'), 300);
+    }
+  };
+
+  const handleBooking = async () => {
+    if (!selectedProperty || !dates.start || !dates.end || isAvailable === false) return;
+    
+    const res = await createInitialBooking({
+      propertyId: selectedProperty.id,
+      startDate: dates.start,
+      endDate: dates.end,
+      ...config
+    });
+
+    if (res.success) {
+      alert(`Booking Reference: ${res.reference}. Total: ${(res.totalCents / 100).toFixed(2)}€`);
+    } else {
+      alert(`Error: ${res.error}`);
     }
   };
 
@@ -59,19 +106,21 @@ export default function PropertyAvailability() {
             const isEnd = dates.end && isSameDay(day, dates.end);
             const inRange = dates.start && dates.end && isWithinInterval(day, { start: dates.start, end: dates.end });
             const isPast = isBefore(day, startOfDay(new Date()));
+            const isBusy = busyDates.some(bd => isSameDay(bd, day));
 
             return (
               <button
                 key={day.toISOString()}
-                disabled={isPast}
+                disabled={isPast || isBusy}
                 onClick={() => handleDateClick(day)}
                 className={`
                   relative h-10 w-10 flex items-center justify-center text-xs font-medium rounded-full transition-all
-                  ${isPast ? 'text-slate-200 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}
+                  ${(isPast || isBusy) ? 'text-slate-200 cursor-not-allowed opacity-30' : 'text-slate-600 hover:bg-slate-100'}
                   ${inRange ? 'bg-sky-50 text-ocean rounded-none first:rounded-l-full last:rounded-r-full' : ''}
                   ${isStart || isEnd ? 'bg-ocean text-white z-10 scale-110 shadow-lg shadow-ocean/20' : ''}
                 `}
               >
+                {isBusy && <div className="absolute top-1 right-1 w-1 h-1 bg-slate-300 rounded-full" />}
                 {format(day, 'd')}
               </button>
             );
@@ -96,10 +145,45 @@ export default function PropertyAvailability() {
   );
 
   return (
-    <section className="py-20 px-4 bg-white relative" ref={containerRef}>
+    <section className="py-20 px-4 bg-white relative" ref={containerRef} id="availability-section">
       <div className="max-w-[1400px] mx-auto">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center bg-white border border-slate-100 rounded-3xl shadow-2xl shadow-slate-200/50 relative">
           
+          {/* Property Selector */}
+          <div 
+            className={`p-8 lg:w-72 border-r border-slate-50 transition-colors cursor-pointer group relative ${activePopover === 'properties' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+            onClick={() => setActivePopover(activePopover === 'properties' ? null : 'properties')}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Home className="w-4 h-4 text-ocean" />
+              <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">Selection</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-slate-900">{selectedProperty?.name || 'Loading...'}</span>
+              <ChevronDown className={`w-4 h-4 text-slate-200 transition-transform ${activePopover === 'properties' ? 'rotate-180' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+              {activePopover === 'properties' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }}
+                  className="absolute top-full left-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 z-50 p-4"
+                >
+                  {properties.map(p => (
+                    <button 
+                      key={p.id}
+                      onClick={(e) => { e.stopPropagation(); setSelectedProperty(p); setActivePopover('dates'); }}
+                      className="w-full p-4 flex flex-col items-start hover:bg-slate-50 rounded-2xl transition-colors mb-1 last:mb-0"
+                    >
+                      <span className="text-sm font-bold text-slate-900">{p.name}</span>
+                      <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Max {p.max_guests} Guests</span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           {/* Dates Trigger */}
           <div 
             className="flex-1 grid grid-cols-2 cursor-pointer group relative"
@@ -150,7 +234,7 @@ export default function PropertyAvailability() {
 
           {/* Guests & Pets Trigger */}
           <div 
-            className={`p-8 lg:w-96 border-r border-slate-50 transition-colors cursor-pointer group relative ${activePopover === 'guests' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
+            className={`p-8 lg:w-80 border-r border-slate-50 transition-colors cursor-pointer group relative ${activePopover === 'guests' ? 'bg-slate-50' : 'hover:bg-slate-50'}`}
             onClick={() => setActivePopover(activePopover === 'guests' ? null : 'guests')}
           >
             <div className="flex items-center gap-3 mb-4">
@@ -178,12 +262,6 @@ export default function PropertyAvailability() {
                     <Counter label="Adults" sub="Ages 18+" value={config.adults} min={1} onChange={(v: number) => setConfig({...config, adults: v})} />
                     <Counter label="Children" sub="Ages 2-17" value={config.children} onChange={(v: number) => setConfig({...config, children: v})} />
                     <Counter label="Babies" sub="Under 2" value={config.babies} onChange={(v: number) => setConfig({...config, babies: v})} />
-                    <div className="flex items-center justify-between py-4 border-t border-slate-50">
-                      <span className="text-xs font-bold text-slate-900 uppercase">Need a crib?</span>
-                      <button onClick={() => setConfig({...config, needsCrib: !config.needsCrib})} className={`w-10 h-5 rounded-full transition-colors flex items-center px-1 ${config.needsCrib ? 'bg-ocean' : 'bg-slate-200'}`}>
-                        <div className={`w-3 h-3 bg-white rounded-full transition-transform ${config.needsCrib ? 'translate-x-5' : ''}`} />
-                      </button>
-                    </div>
                     <div className="pt-4 border-t border-slate-50">
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-xs font-bold text-slate-900 uppercase">Pets</span>
@@ -205,14 +283,21 @@ export default function PropertyAvailability() {
             </AnimatePresence>
           </div>
 
-          {/* Action Button with Night Count */}
+          {/* Action Button with Availability State */}
           <div className="p-6 lg:p-8 flex items-center justify-center">
             <button 
-              onClick={() => console.log('Booking Config:', { dates, config })}
-              className="group flex flex-col items-center justify-center gap-1 px-12 py-6 bg-ocean text-white rounded-2xl font-bold transition-all hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-1 active:scale-95 min-w-[260px]"
+              disabled={isAvailable === false || isChecking}
+              onClick={handleBooking}
+              className={`
+                group flex flex-col items-center justify-center gap-1 px-12 py-6 rounded-2xl font-bold transition-all min-w-[260px]
+                ${isAvailable === false ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-ocean text-white hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-1 active:scale-95'}
+              `}
             >
               <div className="flex items-center gap-3 text-sm uppercase tracking-[0.2em]">
-                Check Availability
+                {isChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+                 isAvailable === true ? <CheckCircle2 className="w-4 h-4" /> :
+                 isAvailable === false ? <XCircle className="w-4 h-4" /> : null}
+                {isAvailable === false ? 'Not Available' : 'Reserve Stay'}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
               <AnimatePresence>
@@ -233,6 +318,51 @@ export default function PropertyAvailability() {
 
         </div>
       </div>
+      {/* Booking Success Modal */}
+      <AnimatePresence>
+        {bookingSuccess && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              onClick={() => setBookingSuccess(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-12 text-center shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-8">
+                <CheckCircle2 className="w-10 h-10 text-ocean" />
+              </div>
+              <h3 className="text-3xl font-bold text-slate-900 tracking-tighter uppercase mb-4">Request Received</h3>
+              <p className="text-slate-500 mb-8 leading-relaxed">
+                We've received your request for <span className="font-bold text-slate-900">{selectedProperty.name}</span>. 
+                Reference: <span className="font-mono font-bold text-ocean">{bookingSuccess.reference}</span>
+              </p>
+              
+              <div className="bg-slate-50 rounded-2xl p-6 mb-8 flex justify-between items-center">
+                <div className="text-left">
+                  <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-widest">Total Amount</span>
+                  <span className="text-2xl font-bold text-slate-900">{(bookingSuccess.totalCents / 100).toFixed(2)}€</span>
+                </div>
+                <div className="text-right">
+                  <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-widest">Status</span>
+                  <span className="px-3 py-1 bg-sky-100 text-ocean text-[10px] font-bold rounded-full uppercase">Pending</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setBookingSuccess(null)}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] hover:bg-ocean transition-all"
+              >
+                Close Summary
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

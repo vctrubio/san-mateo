@@ -7,9 +7,18 @@ export default function Footer() {
   const airbnbUrl = "https://www.airbnb.es/users/profile/1467030082869236380?previous_page_name=PdpHomeMarketplace";
 
   const [shareUrl, setShareUrl] = React.useState("");
+  const [wind, setWind] = React.useState({ speed: 18, deg: 270 });
 
   React.useEffect(() => {
     setShareUrl(window.location.href);
+    
+    const interval = setInterval(() => {
+      setWind(prev => ({
+        speed: Math.max(10, Math.min(45, Number((prev.speed + (Math.random() - 0.5) * 2).toFixed(1)))),
+        deg: (prev.deg + Math.floor((Math.random() - 0.5) * 10)) % 360
+      }));
+    }, 4000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleShare = () => {
@@ -70,10 +79,12 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Right: Location */}
+        {/* Right: Location & Wind */}
         <div className="flex flex-col items-center md:items-end">
           <span className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">Tarifa, Spain</span>
-          <span className="text-[10px] font-mono text-slate-300 uppercase mt-1 tracking-widest">36.0127° N, 5.6020° W</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{wind.speed} KTS • {wind.deg}° Wind</span>
+          </div>
         </div>
 
       </div>

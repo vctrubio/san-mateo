@@ -66,6 +66,11 @@ CREATE TABLE bookings (
     check_out                      DATE NOT NULL,
     num_adults                     INT NOT NULL DEFAULT 1,
     num_children                   INT NOT NULL DEFAULT 0,
+    num_babies                     INT NOT NULL DEFAULT 0,
+    needs_crib                     BOOLEAN NOT NULL DEFAULT FALSE,
+    num_dogs                       INT NOT NULL DEFAULT 0,
+    num_cats                       INT NOT NULL DEFAULT 0,
+    special_requirements           TEXT,
     
     currency                       CHAR(3) NOT NULL,
     nightly_rate_cents             INT NOT NULL,
@@ -74,10 +79,28 @@ CREATE TABLE bookings (
     total_cents                    INT NOT NULL,
 
     status                         VARCHAR(50) NOT NULL DEFAULT 'pending',
+    payment_status                 VARCHAR(50) NOT NULL DEFAULT 'unpaid',
+    cancellation_reason            TEXT,
+    metadata                       JSON,
     
     created_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE RESTRICT
+);
+
+CREATE TABLE availability_slots (
+    id                VARCHAR(36) PRIMARY KEY,
+    property_id       VARCHAR(36) NOT NULL,
+    slot_date         DATE NOT NULL,
+    booking_id        VARCHAR(36),
+    status            VARCHAR(50) NOT NULL DEFAULT 'available', -- available, reserved, blocked
+    
+    created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE(property_id, slot_date),
+    FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE SET NULL
 );
