@@ -12,7 +12,7 @@ export default function Home() {
       <PropertyShowcase />
       <PropertyAvailability />
       <AboutSection />
-      <DebugColorPanel />
+      {/* <DebugColorPanel /> */}
       <Footer />
     </main>
   );
