@@ -23,9 +23,9 @@ export default function PropertyAvailability() {
   });
 
   useEffect(() => {
-    getAllProperties().then(data => {
-      setProperties(data as any[]);
-      if (data.length > 0) setSelectedProperty(data[0]);
+    getAllProperties().then((data: any) => {
+      setProperties(data);
+      if (data && data.length > 0) setSelectedProperty(data[0]);
     });
 
     function handleClickOutside(event: MouseEvent) {
@@ -81,9 +81,9 @@ export default function PropertyAvailability() {
     });
 
     if (res.success) {
-      alert(`Booking Reference: ${res.reference}. Total: ${(res.totalCents / 100).toFixed(2)}€`);
+      setBookingSuccess(res as any);
     } else {
-      alert(`Error: ${res.error}`);
+      alert(`Error: ${(res as any).error}`);
     }
   };
 

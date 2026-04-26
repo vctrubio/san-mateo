@@ -39,8 +39,8 @@ export async function createInitialBooking(config: BookingConfig) {
 export async function getAllProperties() {
   try {
     const conn = await getConnection();
-    const [rows] = await conn.query('SELECT id, name, slug, max_guests, base_price_cents FROM properties WHERE status = "active"');
-    return rows;
+    const [rows]: any = await conn.query('SELECT id, name, slug, max_guests, base_price_cents FROM properties WHERE status = "active"');
+    return rows as any[];
   } catch (error) {
     console.error('Failed to fetch properties:', error);
     return [];
