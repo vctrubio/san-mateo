@@ -17,8 +17,9 @@ This is the living checklist for turning the current prototype into the full wor
 - [x] Add initial admin subroutes for properties, bookings, guests, and analytics
 - [x] Add landing-page links into the admin and user experiences
 - [ ] Add admin route protection with Better Auth session checks
-- [ ] Add role-based access control for admin-only routes
-- [ ] Add a proper authenticated login flow for admins
+- [x] Add admin route protection with Better Auth session checks
+- [x] Add role-based access control for admin-only routes
+- [x] Add a proper authenticated login flow for admins
 
 ## 3. Domain and Services
 
@@ -97,6 +98,9 @@ This is the living checklist for turning the current prototype into the full wor
 - [x] `/user` guest route added
 - [x] Admin route tree skeleton added
 - [x] Landing page now links into admin and user views
+- [x] Better Auth server/client auth setup added
+- [x] Next.js auth route handler added
+- [x] Development role switch flow added to `/user`
 
 ## 11. Next Best Step
 

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import DebugDatabasePanel from '@/components/DebugDatabasePanel';
+import { getCurrentSession } from '@/lib/auth-session';
 
 const routeCards = [
   {
@@ -24,7 +25,9 @@ const routeCards = [
   },
 ];
 
-export default function AdminPage() {
+export default async function AdminPage() {
+  const session = await getCurrentSession();
+
   return (
     <main className="min-h-screen bg-[#F5F2ED]">
       <section className="px-6 pt-16 pb-10 border-b border-slate-200 bg-white/70 backdrop-blur">
@@ -47,6 +50,24 @@ export default function AdminPage() {
             <Link href="/user" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
               Open guest view
             </Link>
+          </div>
+
+          <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-lg md:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Signed in as</p>
+              <p className="mt-2 text-xl font-bold">{session?.user.name}</p>
+              <p className="text-sm text-slate-300">{session?.user.email}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Role</p>
+              <p className="mt-2 text-xl font-bold uppercase tracking-[0.2em] text-sky-200">
+                {session?.user.role}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Mode</p>
+              <p className="mt-2 text-xl font-bold text-slate-50">Admin surface</p>
+            </div>
           </div>
         </div>
       </section>

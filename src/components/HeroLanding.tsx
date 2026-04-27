@@ -85,6 +85,9 @@ function Title() {
           <Link href="/user" className="rounded-full bg-slate-900 px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ocean">
             Guest view
           </Link>
+          <Link href="/sign-in" className="rounded-full border border-slate-300 bg-white/80 px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
+            Sign in
+          </Link>
           <Link href="/admin" className="rounded-full border border-slate-300 bg-white/80 px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
             Admin dashboard
           </Link>

@@ -3,6 +3,11 @@ USE san_mateo;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `verification`;
+DROP TABLE IF EXISTS `account`;
+DROP TABLE IF EXISTS `session`;
+DROP TABLE IF EXISTS `user`;
+
 DROP VIEW IF EXISTS v_guest_summary;
 DROP VIEW IF EXISTS v_property_status_today;
 DROP VIEW IF EXISTS v_booking_payment_status;
@@ -23,6 +28,67 @@ DROP TABLE IF EXISTS properties;
 DROP TABLE IF EXISTS fincas;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE `user` (
+    id              VARCHAR(36) PRIMARY KEY,
+    name            VARCHAR(255) NOT NULL,
+    email           VARCHAR(255) NOT NULL UNIQUE,
+    emailVerified   BOOLEAN NOT NULL DEFAULT FALSE,
+    image           TEXT,
+    role            VARCHAR(32) NOT NULL DEFAULT 'user',
+    banned          BOOLEAN NOT NULL DEFAULT FALSE,
+    banReason       TEXT,
+    banExpires      DATETIME NULL,
+    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_user_role ON `user`(role);
+
+CREATE TABLE `session` (
+    id              VARCHAR(36) PRIMARY KEY,
+    expiresAt       DATETIME NOT NULL,
+    token           VARCHAR(255) NOT NULL UNIQUE,
+    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    ipAddress       TEXT,
+    userAgent       TEXT,
+    userId          VARCHAR(36) NOT NULL,
+    impersonatedBy  VARCHAR(36),
+    FOREIGN KEY (userId) REFERENCES `user`(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_session_userId ON `session`(userId);
+
+CREATE TABLE `account` (
+    id                      VARCHAR(36) PRIMARY KEY,
+    accountId               VARCHAR(255) NOT NULL,
+    providerId              VARCHAR(255) NOT NULL,
+    userId                  VARCHAR(36) NOT NULL,
+    accessToken             TEXT,
+    refreshToken            TEXT,
+    idToken                 TEXT,
+    accessTokenExpiresAt    DATETIME NULL,
+    refreshTokenExpiresAt   DATETIME NULL,
+    scope                   TEXT,
+    password                TEXT,
+    createdAt               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (userId) REFERENCES `user`(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_account_userId ON `account`(userId);
+
+CREATE TABLE `verification` (
+    id          VARCHAR(36) PRIMARY KEY,
+    identifier  VARCHAR(255) NOT NULL,
+    value       TEXT NOT NULL,
+    expiresAt   DATETIME NOT NULL,
+    createdAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updatedAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_verification_identifier ON `verification`(identifier);
 
 CREATE TABLE fincas (
     id                VARCHAR(36) PRIMARY KEY,

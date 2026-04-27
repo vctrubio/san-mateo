@@ -3,6 +3,8 @@ import HeroLanding from '@/components/HeroLanding';
 import PropertyShowcase from '@/components/PropertyShowcase';
 import PropertyAvailability from '@/components/PropertyAvailability';
 import Footer from '@/components/Footer';
+import { updateDevRole } from '@/app/actions/auth';
+import { getCurrentSession } from '@/lib/auth-session';
 
 const userSteps = [
   {
@@ -19,7 +21,9 @@ const userSteps = [
   },
 ];
 
-export default function UserPage() {
+export default async function UserPage() {
+  const session = await getCurrentSession();
+
   return (
     <main className="min-h-screen">
       <section className="px-6 pt-10 pb-8 bg-white border-b border-slate-200">
@@ -39,6 +43,51 @@ export default function UserPage() {
             <Link href="/admin" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
               Open admin dashboard
             </Link>
+            <Link href="/sign-in" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
+              Sign in again
+            </Link>
+          </div>
+
+          <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-lg md:grid-cols-[1.3fr_0.7fr]">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Current session</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">{session?.user.name}</h2>
+              <p className="text-sm text-slate-300">{session?.user.email}</p>
+              <p className="mt-4 text-xs uppercase tracking-[0.35em] text-sky-200">Role: {session?.user.role}</p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-300">Development tool</p>
+              <p className="mt-2 text-sm leading-6 text-slate-200">
+                Switch your own Better Auth role here so you can test both guest and admin experiences without
+                leaving the app.
+              </p>
+
+              {process.env.NODE_ENV !== 'production' ? (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <form action={updateDevRole}>
+                    <input type="hidden" name="role" value="user" />
+                    <button
+                      type="submit"
+                      className="w-full rounded-full border border-white/20 bg-white/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-white/20"
+                    >
+                      Switch to user
+                    </button>
+                  </form>
+                  <form action={updateDevRole}>
+                    <input type="hidden" name="role" value="admin" />
+                    <button
+                      type="submit"
+                      className="w-full rounded-full bg-sky-500 px-4 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-sky-400"
+                    >
+                      Switch to admin
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <p className="mt-4 text-xs text-slate-400">Role switching is disabled in production.</p>
+              )}
+            </div>
           </div>
         </div>
       </section>
