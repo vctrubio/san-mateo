@@ -40,7 +40,7 @@ function Wireframe() {
 
           <g fill="#0f172a" opacity="0.6" fontFamily="var(--font-mono)" fontSize="16" letterSpacing="0.08em">
             <text x="702" y="126" fontSize="12" opacity="0.75">EUROPE</text>
-            <text x="526" y="448">TARIFA</text>
+            {/* <text x="526" y="448">TARIFA</text> */}
             <text x="716" y="738" fontSize="12" opacity="0.75">AFRICA</text>
             <text x="620" y="602">TANGIER</text>
             <text x="706" y="630" fontSize="12" opacity="0.7">MOROCCO</text>

@@ -141,13 +141,13 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
                 disabled={isPast || isBusy}
                 onClick={() => handleDateClick(day)}
                 className={`
-                  relative h-10 w-10 flex items-center justify-center text-xs font-medium rounded-full transition-all mx-auto
-                  ${(isPast || isBusy) ? 'text-slate-200 cursor-not-allowed opacity-30' : 'text-slate-600 hover:bg-slate-100'}
-                  ${inRange ? 'bg-sky-50 text-ocean rounded-none first:rounded-l-full last:rounded-r-full' : ''}
-                  ${isStart || isEnd ? 'bg-ocean text-white z-10 scale-110 shadow-lg shadow-ocean/20' : ''}
+                  relative h-10 w-10 flex items-center justify-center text-xs font-semibold transition-all mx-auto
+                  ${(isPast || isBusy) ? 'text-slate-300 cursor-not-allowed opacity-40' : 'text-slate-700 hover:bg-slate-100/80 rounded-full'}
+                  ${inRange ? '!bg-sky-100 !text-sky-950 !rounded-none font-bold' : ''}
+                  ${isStart || isEnd ? '!bg-ocean !text-white z-20 !rounded-full scale-110 font-black shadow-lg shadow-ocean/30' : ''}
                 `}
               >
-                {isBusy && <div className="absolute top-1 right-1 w-1 h-1 bg-slate-300 rounded-full" />}
+                {isBusy && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-rose-400 rounded-full animate-pulse" />}
                 {format(day, 'd')}
               </button>
             );
@@ -177,8 +177,7 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
   if (preselectedSlug) {
     return (
       <section className="relative bg-white border border-slate-100 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-100/50" ref={containerRef} id="availability-section">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          
+        <div className="flex flex-col gap-8">
           {/* Calendar Side */}
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
@@ -213,7 +212,7 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
           </div>
 
           {/* Guests & Reserve Action Side */}
-          <div className="border-t lg:border-t-0 lg:border-l border-slate-100 pt-6 lg:pt-0 lg:pl-8 flex flex-col justify-between">
+          <div className="border-t border-slate-100 pt-6 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean">Configuration</p>
