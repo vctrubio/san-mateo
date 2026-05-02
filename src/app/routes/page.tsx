@@ -31,7 +31,6 @@ const routeGroups = [
       { path: '/admin/properties', label: 'All properties', description: 'Management of finca properties' },
       { path: '/admin/properties/levante', label: 'Property edit & view', description: 'Manage amenities, photos, and base fees' },
       { path: '/admin/payments', label: 'Payments list', description: 'Deposit and balance settlement history' },
-      { path: '/admin/analytics', label: 'Analytics view', description: 'Occupancy bars and trailing monthly income metrics' },
     ],
   },
   {

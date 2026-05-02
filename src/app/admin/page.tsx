@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { BarChart3, Building2, CalendarCheck, CheckCircle2, Clock, Euro, Users, Home } from 'lucide-react';
-import { getAdminDashboardStats } from '@/services/AdminOpsService';
-import { getAdminBookingSnapshot } from '@/services/AdminOpsService';
+import { getAdminDashboardStats, getAnalyticsStats, getAdminBookingSnapshot } from '@/services/AdminOpsService';
 
 function formatMoney(cents: number) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(cents / 100);
@@ -21,8 +20,9 @@ const statusColors: Record<string, string> = {
 };
 
 export default async function AdminPage() {
-  const [stats, snapshot] = await Promise.all([
+  const [stats, analytics, snapshot] = await Promise.all([
     getAdminDashboardStats(),
+    getAnalyticsStats(),
     getAdminBookingSnapshot(),
   ]);
 
@@ -37,29 +37,12 @@ export default async function AdminPage() {
     { label: 'Collected', value: formatMoney(stats.revenue_collected_cents), icon: BarChart3, color: 'text-emerald-600' },
   ];
 
-  return (
-    <main className="space-y-10">
-      {/* Header */}
-      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-4">Admin dashboard</p>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-slate-900 mb-4">
-          Finca San Mateo — Operations
-        </h1>
-        <p className="max-w-3xl text-slate-600 leading-relaxed">
-          Estate-level overview. Real-time stats from the database, current booking states, and quick access to all operational surfaces.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Link href="/finca" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
-            Guest view
-          </Link>
-          <Link href="/booking" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
-            Booking lookup
-          </Link>
-        </div>
-      </section>
+  const maxRevenue = Math.max(...analytics.monthlyRevenue.map((m) => m.revenue_cents), 1);
 
+  return (
+    <main className="space-y-8">
       {/* Stats grid */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
         {statCards.map((card) => (
           <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
@@ -71,79 +54,107 @@ export default async function AdminPage() {
         ))}
       </section>
 
-      {/* Admin routes */}
-      <section>
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400 mb-4">Quick access</p>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { href: '/admin/properties', title: 'Properties', description: 'Inventory, availability, pricing, photos, and operational status.' },
-            { href: '/admin/bookings', title: 'Bookings', description: 'Reservation lifecycle, deposits, balances, and booking events.' },
-            { href: '/admin/guests', title: 'Guests', description: 'Guest history, spend, reviews, and account links.' },
-            { href: '/admin/analytics', title: 'Analytics', description: 'Occupancy, revenue, payment status, and portfolio performance.' },
-          ].map((card) => (
-            <Link key={card.href} href={card.href} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-ocean/30">
-              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400 mb-3">Admin route</p>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">{card.title}</h2>
-              <p className="text-sm leading-relaxed text-slate-600">{card.description}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Recent bookings + pending */}
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400">Recent bookings</p>
-            <Link href="/admin/bookings" className="text-[10px] font-mono uppercase tracking-[0.3em] text-ocean hover:underline">View all</Link>
-          </div>
-          <div className="space-y-3">
-            {snapshot.recentBookings.slice(0, 5).map((booking) => (
-              <div key={booking.reference} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-                <div>
-                  <div className="font-bold text-slate-900 text-sm">{booking.reference}</div>
-                  <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mt-0.5">
-                    {booking.property_name} · {formatDate(booking.check_in)} → {formatDate(booking.check_out)}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="text-sm font-bold text-slate-900">{formatMoney(booking.total_cents)}</div>
-                  <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[9px] font-mono uppercase tracking-[0.2em] ${statusColors[booking.status] ?? 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                    {booking.status}
-                  </span>
-                </div>
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Left Column: Revenue + Occupancy */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Monthly revenue bars */}
+          {analytics.monthlyRevenue.length > 0 && (
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-6">Monthly revenue performance</p>
+              <div className="flex items-end gap-3 h-48">
+                {analytics.monthlyRevenue.map((month) => {
+                  const pct = (month.revenue_cents / maxRevenue) * 100;
+                  return (
+                    <div key={month.month} className="flex flex-col items-center gap-2 flex-1 min-w-0">
+                      <div className="text-[9px] font-mono text-slate-400 text-center">{formatMoney(month.revenue_cents)}</div>
+                      <div
+                        className="w-full rounded-t-lg bg-ocean/80 transition-all hover:bg-ocean"
+                        style={{ height: `${Math.max(pct, 4)}%` }}
+                      />
+                      <div className="text-[9px] font-mono text-slate-500 text-center truncate w-full">{month.month.slice(5)}/{month.month.slice(2, 4)}</div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </section>
+          )}
+
+          {/* Property occupancy */}
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-5">Property occupancy</p>
+            <div className="space-y-4">
+              {analytics.propertyOccupancy.map((prop) => (
+                <Link key={prop.slug} href={`/admin/properties/${prop.slug}`} className="block group">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold text-slate-900 group-hover:text-ocean transition-colors">{prop.name}</span>
+                    <span className="text-xs font-mono text-slate-500">{prop.nights_booked} nights · {prop.occupancy_pct}%</span>
+                  </div>
+                  <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-ocean transition-all"
+                      style={{ width: `${Math.min(prop.occupancy_pct, 100)}%` }}
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400">Pending requests</p>
-            <Link href="/admin/bookings" className="text-[10px] font-mono uppercase tracking-[0.3em] text-ocean hover:underline">View all</Link>
-          </div>
-          {snapshot.pendingRequests.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
-              No pending requests right now.
+        {/* Right Column: Bookings snapshot */}
+        <div className="space-y-8">
+          {/* Recent bookings */}
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400">Recent activity</p>
+              <Link href="/admin/bookings" className="text-[10px] font-mono uppercase tracking-[0.3em] text-ocean hover:underline">View all</Link>
             </div>
-          ) : (
             <div className="space-y-3">
-              {snapshot.pendingRequests.map((booking) => (
-                <div key={booking.reference} className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+              {snapshot.recentBookings.slice(0, 6).map((booking) => (
+                <div key={booking.reference} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
                   <div>
                     <div className="font-bold text-slate-900 text-sm">{booking.reference}</div>
-                    <div className="text-[10px] font-mono text-slate-500 mt-0.5">{booking.guest_email}</div>
+                    <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-[120px]">
+                      {booking.property_name}
+                    </div>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-sm font-bold text-slate-900">{formatMoney(booking.total_cents)}</div>
-                    <div className="text-[10px] font-mono uppercase tracking-wider text-amber-600 mt-0.5">Awaiting</div>
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[9px] font-mono uppercase tracking-[0.2em] ${statusColors[booking.status] ?? 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                      {booking.status}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
-          )}
+          </section>
+
+          {/* Pending requests */}
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-slate-400 mb-5">Pending requests</p>
+            {snapshot.pendingRequests.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
+                All caught up.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {snapshot.pendingRequests.map((booking) => (
+                  <div key={booking.reference} className="flex items-center justify-between gap-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3">
+                    <div>
+                      <div className="font-bold text-slate-900 text-sm">{booking.reference}</div>
+                      <div className="text-[10px] font-mono text-slate-500 mt-0.5">{booking.guest_email}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-bold text-slate-900">{formatMoney(booking.total_cents)}</div>
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-amber-600 mt-0.5">Awaiting</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

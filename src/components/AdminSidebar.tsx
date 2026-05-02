@@ -23,11 +23,10 @@ type AdminSidebarProps = {
 };
 
 const primaryNav = [
-  { href: '/admin', label: 'Overview', icon: LayoutGrid },
+  { href: '/admin', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/properties', label: 'Properties', icon: Building2 },
   { href: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
   { href: '/admin/guests', label: 'Guests', icon: Users },
-  { href: '/admin/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/admin/payments', label: 'Payments', icon: Wallet },
 ];
 
@@ -67,15 +66,6 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
         <div>
           <p className="text-xs font-mono uppercase tracking-[0.3em] text-slate-400">Admin</p>
           <p className="text-sm font-bold text-slate-900">Finca San Mateo</p>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-        <div className="text-xs font-mono uppercase tracking-[0.2em] text-slate-400">Signed in</div>
-        <div className="mt-2 text-sm font-semibold text-slate-900">{user.name ?? 'Admin'}</div>
-        <div className="text-xs text-slate-500">{user.email ?? 'admin@sanmateo.test'}</div>
-        <div className="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-600">
-          {user.role ?? 'admin'}
         </div>
       </div>
 

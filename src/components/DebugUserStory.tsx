@@ -11,7 +11,6 @@ const quickLinks = [
   { href: "/admin/bookings", label: "Bookings", description: "Placeholder booking pipeline." },
   { href: "/admin/properties", label: "Properties", description: "Placeholder inventory editor." },
   { href: "/admin/guests", label: "Guests", description: "Placeholder guest CRM view." },
-  { href: "/admin/analytics", label: "Analytics", description: "Placeholder analytics surface." },
 ];
 
 export default function DebugUserStory() {
