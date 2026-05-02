@@ -1,8 +1,12 @@
 import Link from 'next/link';
 import DebugDatabasePanel from '@/components/DebugDatabasePanel';
-import { getCurrentSession } from '@/lib/auth-session';
 
 const routeCards = [
+  {
+    href: '/users',
+    title: 'Users & Roles',
+    description: 'Switch admin/user roles and review booking request snapshots.',
+  },
   {
     href: '/admin/properties',
     title: 'Properties',
@@ -25,55 +29,31 @@ const routeCards = [
   },
 ];
 
-export default async function AdminPage() {
-  const session = await getCurrentSession();
-
+export default function AdminPage() {
   return (
-    <main className="min-h-screen bg-[#F5F2ED]">
-      <section className="px-6 pt-16 pb-10 border-b border-slate-200 bg-white/70 backdrop-blur">
-        <div className="max-w-6xl mx-auto flex flex-col gap-6">
-          <div className="flex flex-col gap-3">
-            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean">Admin dashboard</p>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-slate-900">
-              Full operational view of the finca.
-            </h1>
-            <p className="max-w-3xl text-slate-600 leading-relaxed">
-              This is the staff surface: estate-level summaries, current booking states, collected payments,
-              guest history, and the route map for the deeper admin sections.
-            </p>
-          </div>
+    <main className="space-y-10">
+      <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-4">Admin dashboard</p>
+        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter text-slate-900 mb-4">
+          Full operational view of the finca.
+        </h1>
+        <p className="max-w-3xl text-slate-600 leading-relaxed">
+          This is the staff surface: estate-level summaries, current booking states, collected payments,
+          guest history, and the route map for the deeper admin sections.
+        </p>
 
-          <div className="flex flex-wrap gap-3">
-            <Link href="/" className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-ocean">
-              Back to landing
-            </Link>
-            <Link href="/user" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
-              Open guest view
-            </Link>
-          </div>
-
-          <div className="grid gap-4 rounded-3xl border border-slate-200 bg-slate-950 p-5 text-white shadow-lg md:grid-cols-3">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Signed in as</p>
-              <p className="mt-2 text-xl font-bold">{session?.user.name}</p>
-              <p className="text-sm text-slate-300">{session?.user.email}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Role</p>
-              <p className="mt-2 text-xl font-bold uppercase tracking-[0.2em] text-sky-200">
-                {session?.user.role}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400">Mode</p>
-              <p className="mt-2 text-xl font-bold text-slate-50">Admin surface</p>
-            </div>
-          </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/" className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-ocean">
+            Back to landing
+          </Link>
+          <Link href="/finca" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-colors hover:border-ocean hover:text-ocean">
+            Browse finca
+          </Link>
         </div>
       </section>
 
-      <section className="px-6 py-10">
-        <div className="max-w-6xl mx-auto grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {routeCards.map((card) => (
             <Link key={card.href} href={card.href} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
               <p className="text-[10px] font-mono uppercase tracking-[0.35em] text-slate-400 mb-3">Admin route</p>

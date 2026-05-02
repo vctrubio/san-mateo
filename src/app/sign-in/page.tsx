@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { Suspense, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 
 type AuthMode = "sign-in" | "sign-up";
 
-function getDestination(callbackUrl: string | null, role: string | undefined) {
+function getDestination(callbackUrl: string | null | undefined, role: string | null | undefined) {
   const fallback = role === "admin" ? "/admin" : "/user";
 
   if (!callbackUrl || callbackUrl === "/") {
@@ -20,7 +20,7 @@ function getDestination(callbackUrl: string | null, role: string | undefined) {
   return callbackUrl;
 }
 
-export default function SignInPage() {
+function SignInContent() {
   const [mode, setMode] = useState<AuthMode>("sign-in");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -78,7 +78,7 @@ export default function SignInPage() {
         return;
       }
 
-      router.replace(getDestination(callbackUrl, session.user.role));
+      router.replace(getDestination(callbackUrl ?? undefined, session.user.role));
       router.refresh();
     });
   };
@@ -212,10 +212,24 @@ export default function SignInPage() {
 
           <p className="mt-6 text-sm leading-6 text-slate-500">
             In development, use the role switch on <span className="font-semibold text-slate-800">/user</span>
-            to jump between guest and admin experiences after you are signed in.
+            or manage users at <span className="font-semibold text-slate-800">/users</span> after you are signed in.
           </p>
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-sand px-4 py-3 text-xs text-slate-600">
+            <span className="font-mono uppercase tracking-[0.2em] text-slate-500">Seeded admin</span>
+            <div className="mt-2 font-mono text-[11px] text-slate-700">
+              admin@sanmateo.test · SanMateoAdmin123!
+            </div>
+          </div>
         </section>
       </div>
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInContent />
+    </Suspense>
   );
 }

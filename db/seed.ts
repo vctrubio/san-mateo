@@ -214,9 +214,13 @@ async function main() {
 
     for (const property of propertySeeds) {
       for (const key of propertyAmenityMap[property.slug]) {
+        const amenityId = amenityIds.get(key);
+        if (!amenityId) {
+          continue;
+        }
         await conn.execute(
           'INSERT INTO property_amenities (property_id, amenity_id) VALUES (?, ?)',
-          [property.id, amenityIds.get(key)]
+          [property.id, amenityId]
         );
       }
     }
@@ -255,6 +259,10 @@ async function main() {
       const rows = propertyFeeIds.get(property.slug) ?? [];
       rows.push({ id, name: row.name, calculation: row.calculation, amount_cents: row.amount_cents, fee_type_key: row.fee_type_key });
       propertyFeeIds.set(property.slug, rows);
+      const feeTypeId = feeTypeIds.get(row.fee_type_key);
+      if (!feeTypeId) {
+        continue;
+      }
       await conn.execute(
         `INSERT INTO property_fees (
           id, property_id, fee_type_id, name, calculation, amount_cents, currency,
@@ -263,7 +271,7 @@ async function main() {
         [
           id,
           property.id,
-          feeTypeIds.get(row.fee_type_key),
+          feeTypeId,
           row.name,
           row.calculation,
           row.amount_cents,
@@ -348,7 +356,78 @@ async function main() {
       );
     }
 
-    const bookingSeeds = [
+    await conn.execute(
+      `INSERT INTO \`user\` (
+        id, name, email, emailVerified, role, banned
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        role = VALUES(role),
+        banned = VALUES(banned)`,
+      [
+        "user_admin_seed",
+        "San Mateo Admin",
+        "admin@sanmateo.test",
+        true,
+        "admin",
+        false,
+      ]
+    );
+
+    await conn.execute(
+      `INSERT INTO \`account\` (
+        id, accountId, providerId, userId, password
+      ) VALUES (?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        password = VALUES(password)`,
+      [
+        "account_admin_seed",
+        "admin@sanmateo.test",
+        "credential",
+        "user_admin_seed",
+        "2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67",
+      ]
+    );
+
+    type BookingSeed = {
+      reference: string;
+      propertySlug: string;
+      guestEmail: string;
+      checkIn: string;
+      checkOut: string;
+      nights: number;
+      numAdults: number;
+      numChildren: number;
+      numInfants: number;
+      status: string;
+      source: string;
+      nightlyRateCents: number;
+      accommodationCents: number;
+      feesCents: number;
+      taxesCents: number;
+      discountCents: number;
+      losDiscountCents: number;
+      losDiscountName: string | null;
+      totalCents: number;
+      depositPercentage: number;
+      depositCents: number;
+      balanceCents: number;
+      balanceDueAt: string;
+      paymentState: string;
+      bookingEvents: string[];
+      review?: {
+        overall: number;
+        cleanliness: number;
+        accuracy: number;
+        location: number;
+        value: number;
+        comment: string;
+        privateFeedback: string;
+        status: string;
+      };
+    };
+
+    const bookingSeeds: BookingSeed[] = [
       {
         reference: 'INF-2026-0001',
         propertySlug: 'levante',
@@ -440,7 +519,7 @@ async function main() {
         paymentState: 'unpaid',
         bookingEvents: ['booking.created'],
       },
-    ] as const;
+    ];
 
     const bookingIds = new Map<string, string>();
 

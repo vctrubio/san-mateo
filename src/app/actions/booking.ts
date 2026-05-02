@@ -27,6 +27,7 @@ export async function createInitialBooking(config: BookingConfig) {
     const conn = await getConnection();
     const [guestRows]: any = await conn.query('SELECT id FROM guests LIMIT 1');
     const guestId = guestRows[0].id;
+    await conn.end();
 
     const result = await BookingService.createBooking(config, guestId);
     return { success: true, ...result };

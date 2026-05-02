@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { CheckCircle2, Circle, ArrowRight, ListTodo, Map as MapIcon, CreditCard, Bell, Users, Settings } from 'lucide-react';
 
 const roadmap = [
@@ -64,32 +65,44 @@ export default function DebugPlan() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <Link
+              href="/users"
+              className="group p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-ocean/40 transition-all"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                <h5 className="text-sm font-bold text-slate-900 uppercase">Owner</h5>
+                <h5 className="text-sm font-bold text-slate-900 uppercase">Owner (Admin)</h5>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">Full visibility into estate performance, financial reports, and strategic overrides.</p>
-              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/admin/owner</code>
-            </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Role management, booking visibility, and estate-level oversight.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/users</code>
+              <div className="mt-4 text-[10px] font-mono uppercase tracking-widest text-slate-400 group-hover:text-ocean">Admin only</div>
+            </Link>
 
-            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <Link
+              href="/admin"
+              className="group p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-ocean/40 transition-all"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2 h-2 bg-blue-500 rounded-full" />
                 <h5 className="text-sm font-bold text-slate-900 uppercase">Admin / Staff</h5>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">Operational dashboard for cleaning schedules, maintenance, and booking management.</p>
-              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/admin/ops</code>
-            </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Operational dashboard for bookings, properties, guests, and analytics.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/admin</code>
+              <div className="mt-4 text-[10px] font-mono uppercase tracking-widest text-slate-400 group-hover:text-ocean">Admin only</div>
+            </Link>
 
-            <div className="p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all">
+            <Link
+              href="/finca"
+              className="group p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-ocean/40 transition-all"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2 h-2 bg-green-500 rounded-full" />
                 <h5 className="text-sm font-bold text-slate-900 uppercase">Guest</h5>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">Personalized portal for booking details, house rules, and direct concierge access.</p>
-              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/guest/portal</code>
-            </div>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">Browse stays, create a booking, and check status by reference.</p>
+              <code className="text-[10px] font-mono bg-slate-50 px-2 py-1 rounded">/finca</code>
+              <div className="mt-4 text-[10px] font-mono uppercase tracking-widest text-slate-400 group-hover:text-ocean">Public entry</div>
+            </Link>
           </div>
         </div>
 

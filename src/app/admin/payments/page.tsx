@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { CalendarDays, Mail, Star } from 'lucide-react';
-import { getAdminGuests } from '@/services/AdminGuestsService';
+import { CalendarDays, Wallet } from 'lucide-react';
+import { getAdminPayments } from '@/services/AdminPaymentsService';
 
-function formatMoney(cents: number | null | undefined) {
+function formatMoney(cents: number | null | undefined, currency: string) {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
-    currency: 'EUR',
+    currency,
     maximumFractionDigits: 0,
   }).format((cents ?? 0) / 100);
 }
@@ -19,8 +19,8 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
-export default async function AdminGuestsPage() {
-  const guests = await getAdminGuests();
+export default async function AdminPaymentsPage() {
+  const payments = await getAdminPayments();
 
   return (
     <main className="space-y-8">
@@ -28,9 +28,9 @@ export default async function AdminGuestsPage() {
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-4">Admin route</p>
-            <h1 className="text-4xl font-bold tracking-tighter text-slate-900 mb-4">Guests</h1>
+            <h1 className="text-4xl font-bold tracking-tighter text-slate-900 mb-4">Payments</h1>
             <p className="max-w-3xl text-slate-600 leading-relaxed">
-              Guest history, lifetime spend, stays, and review performance.
+              Deposit and balance payments across all bookings.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -41,39 +41,37 @@ export default async function AdminGuestsPage() {
       </section>
 
       <section className="grid gap-4">
-        {guests.map((guest) => (
+        {payments.map((payment) => (
           <Link
-            key={guest.guest_id}
-            href={`/admin/guests/${guest.guest_id}`}
+            key={payment.id}
+            href={`/admin/bookings/${payment.booking_id}`}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-ocean/40 hover:shadow-md"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">Guest</p>
-                <h2 className="text-xl font-bold text-slate-900">{guest.first_name} {guest.last_name}</h2>
-                <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
-                  <Mail className="h-3.5 w-3.5" />
-                  {guest.email}
-                </div>
+                <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">{payment.reference}</p>
+                <h2 className="text-xl font-bold text-slate-900">{payment.property_name}</h2>
+                <p className="text-sm text-slate-500">{payment.guest_email}</p>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold text-slate-900">{formatMoney(guest.lifetime_spend_cents)}</div>
-                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">{guest.stays_completed} stays</div>
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-500">
+                  {payment.kind}
+                </div>
+                <div className="mt-2 text-sm font-bold text-slate-900">
+                  {formatMoney(payment.amount_cents, payment.currency)}
+                </div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-ocean">{payment.status}</div>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-3 text-xs font-mono text-slate-600 sm:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 text-xs font-mono text-slate-600 sm:grid-cols-2">
               <div className="flex items-center gap-1.5">
                 <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                <span>Last stay {formatDate(guest.last_stay_ended_on)}</span>
+                <span>Due {formatDate(payment.due_at)}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 text-slate-400" />
-                <span>Avg rating {guest.avg_rating_given ?? '-'}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-slate-400">Upcoming</span>
-                <span>{guest.stays_upcoming}</span>
+                <Wallet className="h-3.5 w-3.5 text-slate-400" />
+                <span>Paid {formatDate(payment.paid_at)}</span>
               </div>
             </div>
           </Link>

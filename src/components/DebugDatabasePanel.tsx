@@ -1,5 +1,5 @@
 import React from 'react';
-import { getPool } from '../../db/client';
+import { pool } from '../../db/client';
 import { CalendarDays, Database, Euro, Home, MapPin, MessageSquare, Users } from 'lucide-react';
 
 type FincaRow = {
@@ -86,7 +86,6 @@ export default async function DebugDatabasePanel() {
   let error: string | null = null;
 
   try {
-    const pool = await getPool();
     const [fincaRows] = (await pool.query('SELECT * FROM fincas LIMIT 1')) as [FincaRow[], unknown];
     const [propertyRows] = (await pool.query(
       `SELECT p.*, ph.storage_key AS cover_photo_key,
@@ -142,7 +141,7 @@ export default async function DebugDatabasePanel() {
   }
 
   return (
-    <section className="p-8 bg-sand/20 border-t border-slate-200">
+    <section className="p-8 bg-sand/20 border border-slate-200 rounded-3xl">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-2 mb-6">
           <Database className="w-4 h-4 text-ocean" />

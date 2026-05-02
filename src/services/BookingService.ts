@@ -2,8 +2,7 @@ import { getConnection } from '../../db/client';
 import crypto from 'crypto';
 import { AvailabilityService } from './AvailabilityService';
 
-export type BookingStatus = 'pending' | 'reserved' | 'confirmed' | 'cancelled';
-export type PaymentStatus = 'unpaid' | 'partial' | 'paid' | 'refunded';
+export type BookingStatus = 'pending' | 'confirmed' | 'checked_in' | 'checked_out' | 'completed' | 'cancelled';
 
 export interface BookingConfig {
   propertyId: string;
@@ -19,34 +18,13 @@ export interface BookingConfig {
 }
 
 export class BookingService {
-  /**
-   * High-performance availability check using the slots table
-   */
   static async checkAvailability(propertyId: string, start: Date, end: Date) {
-    const conn = await getConnection();
-    
-    // Ensure slots exist for this range
-    await AvailabilityService.initializeSlots(propertyId, start, end);
-
-    // Check if any slot in range is not 'available'
-    // Note: check_out day is not included in the block (it's the arrival day for the next guest)
-    const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    
-    const [rows]: any = await conn.query(`
-      SELECT COUNT(*) as busy_count 
-      FROM availability_slots 
-      WHERE property_id = ? 
-      AND status != 'available'
-      AND slot_date >= ? 
-      AND slot_date < ?
-    `, [propertyId, start.toISOString().split('T')[0], end.toISOString().split('T')[0]]);
-
-    return rows[0].busy_count === 0;
+    return AvailabilityService.isAvailable(propertyId, start, end);
   }
 
   static async createBooking(config: BookingConfig, guestId: string) {
     const conn = await getConnection();
-    
+
     // Atomic check and block
     const isAvailable = await this.checkAvailability(config.propertyId, config.startDate, config.endDate);
     if (!isAvailable) throw new Error('Selected dates are no longer available.');
@@ -74,35 +52,87 @@ export class BookingService {
     try {
       await conn.beginTransaction();
 
-      await conn.query(`
-        INSERT INTO bookings (
-          id, reference, property_id, guest_id, check_in, check_out, 
-          num_adults, num_children, num_babies, needs_crib, num_dogs, num_cats,
-          currency, nightly_rate_cents, accommodation_cents, fees_cents, total_cents, 
-          status, payment_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        bookingId, reference, config.propertyId, guestId,
+      await conn.query(
+        `INSERT INTO bookings (
+          id, reference, property_id, guest_id, check_in, check_out, nights,
+          num_adults, num_children, num_infants,
+          currency, nightly_rate_cents, accommodation_cents, fees_cents, taxes_cents,
+          discount_cents, length_of_stay_discount_cents, length_of_stay_discount_name,
+          total_cents, deposit_percentage, deposit_cents, balance_cents, balance_due_at,
+          status, source, guest_message, admin_notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      , [
+        bookingId,
+        reference,
+        config.propertyId,
+        guestId,
         config.startDate.toISOString().split('T')[0],
         config.endDate.toISOString().split('T')[0],
-        config.adults, config.children, config.babies, config.needsCrib, config.dogs, config.cats,
-        property.currency, property.base_price_cents, baseTotal, cleaningFee + petFee, totalCents,
-        'reserved', 'unpaid'
+        nights,
+        config.adults,
+        config.children,
+        config.babies,
+        property.currency,
+        property.base_price_cents,
+        baseTotal,
+        cleaningFee + petFee,
+        0,
+        0,
+        0,
+        null,
+        totalCents,
+        50,
+        Math.round(totalCents * 0.5),
+        Math.round(totalCents * 0.5),
+        null,
+        'pending',
+        'direct',
+        'Booking created from /finca availability flow.',
+        'Auto-generated for testing mode.'
       ]);
 
-      // Block the slots immediately
-      await AvailabilityService.blockSlots(config.propertyId, config.startDate, config.endDate, bookingId);
+      await conn.query(
+        `INSERT INTO booking_events (id, booking_id, event_type, payload, actor_type, actor_id)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      , [
+        crypto.randomUUID(),
+        bookingId,
+        'booking.created',
+        JSON.stringify({ reference, propertyId: config.propertyId }),
+        'guest',
+        guestId,
+      ]);
+
+      await conn.query(
+        `INSERT INTO payments (
+          id, booking_id, kind, amount_cents, currency, status, due_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      , [
+        crypto.randomUUID(),
+        bookingId,
+        'deposit',
+        Math.round(totalCents * 0.5),
+        property.currency,
+        'pending',
+        null,
+      ]);
 
       await conn.commit();
       return { bookingId, reference, totalCents, currency: property.currency };
     } catch (error) {
       await conn.rollback();
       throw error;
+    } finally {
+      await conn.end();
     }
   }
 
   static async updateStatus(bookingId: string, status: BookingStatus) {
     const conn = await getConnection();
-    await conn.query('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+    try {
+      await conn.query('UPDATE bookings SET status = ? WHERE id = ?', [status, bookingId]);
+    } finally {
+      await conn.end();
+    }
   }
 }

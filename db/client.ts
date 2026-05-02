@@ -1,11 +1,15 @@
 import mysql from 'mysql2/promise';
 
+const connectionUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/san_mateo';
+
 export async function getConnection() {
-  const connectionUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/san_mateo';
   return mysql.createConnection(connectionUrl);
 }
 
-export async function getPool() {
-  const connectionUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/san_mateo';
-  return mysql.createPool(connectionUrl);
-}
+// Singleton pool for Better Auth and other shared queries
+export const pool = mysql.createPool({
+  uri: connectionUrl,
+  connectionLimit: 10,
+  timezone: '+00:00' // Use UTC
+});
+

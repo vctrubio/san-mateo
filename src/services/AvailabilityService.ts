@@ -1,21 +1,30 @@
 import { getConnection } from '../../db/client';
-import crypto from 'crypto';
-import { eachDayOfInterval, format, startOfMonth, endOfMonth, addMonths, addDays } from 'date-fns';
+import { addDays, eachDayOfInterval, endOfMonth, format, max, min, startOfDay, startOfMonth } from 'date-fns';
 
 export class AvailabilityService {
   /**
-   * Initializes availability slots for a property if they don't exist
+   * Returns whether a property is available for a date range.
    */
-  static async initializeSlots(propertyId: string, startDate: Date, endDate: Date) {
+  static async isAvailable(propertyId: string, startDate: Date, endDate: Date) {
     const conn = await getConnection();
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
-    
-    for (const day of days) {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      await conn.query(`
-        INSERT IGNORE INTO availability_slots (id, property_id, slot_date, status)
-        VALUES (?, ?, ?, 'available')
-      `, [crypto.randomUUID(), propertyId, dateStr]);
+
+    try {
+      const start = format(startDate, 'yyyy-MM-dd');
+      const end = format(endDate, 'yyyy-MM-dd');
+
+      const [rows]: any = await conn.query(
+        `SELECT COUNT(*) AS conflict_count
+         FROM bookings
+         WHERE property_id = ?
+           AND status IN ('pending', 'confirmed', 'checked_in')
+           AND check_in < ?
+           AND check_out > ?`,
+        [propertyId, end, start]
+      );
+
+      return rows[0].conflict_count === 0;
+    } finally {
+      await conn.end();
     }
   }
 
@@ -24,34 +33,39 @@ export class AvailabilityService {
    */
   static async getBusyDates(propertyId: string, month: Date) {
     const conn = await getConnection();
-    const start = format(startOfMonth(month), 'yyyy-MM-dd');
-    const end = format(endOfMonth(addMonths(month, 1)), 'yyyy-MM-dd');
+    const monthStart = startOfDay(startOfMonth(month));
+    const monthEnd = startOfDay(endOfMonth(month));
 
-    const [rows]: any = await conn.query(`
-      SELECT slot_date 
-      FROM availability_slots 
-      WHERE property_id = ? 
-      AND status != 'available'
-      AND slot_date BETWEEN ? AND ?
-    `, [propertyId, start, end]);
+    try {
+      const [rows]: any = await conn.query(
+        `SELECT check_in, check_out
+         FROM bookings
+         WHERE property_id = ?
+           AND status IN ('pending', 'confirmed', 'checked_in')
+           AND check_in <= ?
+           AND check_out >= ?`,
+        [propertyId, format(monthEnd, 'yyyy-MM-dd'), format(monthStart, 'yyyy-MM-dd')]
+      );
 
-    return rows.map((r: any) => new Date(r.slot_date));
-  }
+      const busyDates = new Set<number>();
 
-  /**
-   * Blocks slots for a specific booking
-   */
-  static async blockSlots(propertyId: string, start: Date, end: Date, bookingId: string) {
-    const conn = await getConnection();
-    const days = eachDayOfInterval({ start, end: addDays(end, -1) }); // Checkout day is usually free for next guest
-    
-    for (const day of days) {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      await conn.query(`
-        UPDATE availability_slots 
-        SET status = 'reserved', booking_id = ? 
-        WHERE property_id = ? AND slot_date = ?
-      `, [bookingId, propertyId, dateStr]);
+      for (const row of rows) {
+        const bookingStart = startOfDay(new Date(row.check_in));
+        const bookingEnd = startOfDay(addDays(new Date(row.check_out), -1));
+        const rangeStart = max([bookingStart, monthStart]);
+        const rangeEnd = min([bookingEnd, monthEnd]);
+
+        if (rangeStart > rangeEnd) continue;
+
+        const days = eachDayOfInterval({ start: rangeStart, end: rangeEnd });
+        for (const day of days) {
+          busyDates.add(day.getTime());
+        }
+      }
+
+      return Array.from(busyDates).map((ts) => new Date(ts));
+    } finally {
+      await conn.end();
     }
   }
 }

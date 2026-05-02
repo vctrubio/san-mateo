@@ -1,15 +1,8 @@
 import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
-import { createPool } from "mysql2/promise";
-
-const databaseUrl = process.env.DATABASE_URL ?? "mysql://root:@localhost:3306/san_mateo";
+import { pool } from "../../db/client";
 
 const authBaseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-
-const database = createPool({
-  uri: databaseUrl,
-  timezone: "Z",
-});
 
 export const auth = betterAuth({
   appName: "Finca San Mateo",
@@ -17,7 +10,7 @@ export const auth = betterAuth({
   secret:
     process.env.BETTER_AUTH_SECRET ??
     "san-mateo-development-secret-change-me-before-production",
-  database,
+  database: pool,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -28,4 +21,8 @@ export const auth = betterAuth({
       adminRoles: ["admin"],
     }),
   ],
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+  },
 });

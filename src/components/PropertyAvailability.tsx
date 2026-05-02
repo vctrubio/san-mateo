@@ -5,8 +5,10 @@ import { Calendar as CalendarIcon, Users, ArrowRight, ChevronDown, ChevronLeft, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, startOfDay, addDays, isBefore, differenceInDays } from 'date-fns';
 import { checkPropertyAvailability, getAllProperties, createInitialBooking, getBusyDates } from '@/app/actions/booking';
+import { useRouter } from 'next/navigation';
 
 export default function PropertyAvailability() {
+  const router = useRouter();
   const [dates, setDates] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activePopover, setActivePopover] = useState<'dates' | 'guests' | 'properties' | null>(null);
@@ -145,9 +147,8 @@ export default function PropertyAvailability() {
   );
 
   return (
-    <section className="py-20 px-4 bg-white relative" ref={containerRef} id="availability-section">
-      <div className="max-w-[1400px] mx-auto">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center bg-white border border-slate-100 rounded-3xl shadow-2xl shadow-slate-200/50 relative">
+    <section className="relative" ref={containerRef} id="availability-section">
+      <div className="bg-white border border-slate-100 rounded-3xl shadow-2xl shadow-slate-200/50 relative">
           
           {/* Property Selector */}
           <div 
@@ -317,7 +318,6 @@ export default function PropertyAvailability() {
           </div>
 
         </div>
-      </div>
       {/* Booking Success Modal */}
       <AnimatePresence>
         {bookingSuccess && (
@@ -338,9 +338,18 @@ export default function PropertyAvailability() {
               </div>
               <h3 className="text-3xl font-bold text-slate-900 tracking-tighter uppercase mb-4">Request Received</h3>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                We've received your request for <span className="font-bold text-slate-900">{selectedProperty.name}</span>. 
+                We've received your request for <span className="font-bold text-slate-900">{selectedProperty.name}</span>.
                 Reference: <span className="font-mono font-bold text-ocean">{bookingSuccess.reference}</span>
               </p>
+              <div className="mb-8">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/booking?reference=${bookingSuccess.reference}`)}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-600 transition-colors hover:border-ocean hover:text-ocean"
+                >
+                  View booking status
+                </button>
+              </div>
               
               <div className="bg-slate-50 rounded-2xl p-6 mb-8 flex justify-between items-center">
                 <div className="text-left">
@@ -353,7 +362,7 @@ export default function PropertyAvailability() {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={() => setBookingSuccess(null)}
                 className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] hover:bg-ocean transition-all"
               >
