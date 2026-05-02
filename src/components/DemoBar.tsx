@@ -119,6 +119,26 @@ export default function DemoBar() {
                     <span className="text-xs font-bold uppercase tracking-[0.15em]">Sign in</span>
                   </span>
                 </Link>
+                {session && (
+                  <button
+                    onClick={async () => {
+                      setDropdownOpen(false);
+                      await authClient.signOut({
+                        fetchOptions: {
+                          onSuccess: () => {
+                            window.location.href = '/';
+                          }
+                        }
+                      });
+                    }}
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors w-full text-left"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <LogOut className="w-4 h-4 text-red-400" />
+                      <span className="text-xs font-bold uppercase tracking-[0.15em]">Sign out</span>
+                    </span>
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
