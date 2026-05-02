@@ -16,7 +16,6 @@ This is the living checklist for turning the current prototype into the full wor
 - [x] Add an `/admin` dashboard overview route
 - [x] Add initial admin subroutes for properties, bookings, guests, and analytics
 - [x] Add landing-page links into the admin and user experiences
-- [ ] Add admin route protection with Better Auth session checks
 - [x] Add admin route protection with Better Auth session checks
 - [x] Add role-based access control for admin-only routes
 - [x] Add a proper authenticated login flow for admins
@@ -34,31 +33,30 @@ This is the living checklist for turning the current prototype into the full wor
 
 ## 4. Public User Flow
 
-- [ ] Build public property detail pages under `/properties/[slug]`
-- [ ] Show live availability and quote calculations on public property pages
-- [ ] Add booking creation flow for guest reservations
-- [ ] Add booking reference lookup for guest self-service
+- [x] Build public property detail pages under `/finca/[slug]`
+- [x] Show live availability and quote calculations on public property pages
+- [x] Add booking creation flow for guest reservations (inline modal flow)
+- [x] Add booking reference lookup for guest self-service
 - [ ] Add review submission flow for completed stays
-- [ ] Add a guest summary view or account-style booking history page
+- [x] Add a guest summary view or account-style booking history page
 - [ ] Update the Three.js world to link directly into public property routes
 
 ## 5. Admin Dashboard
 
-- [ ] Build the real `/admin/properties` listing with status and availability strips
-- [ ] Build the real `/admin/properties/[slug]` detail page
-- [ ] Show rate plans, fees, blackout periods, and calendar blocks in admin
-- [ ] Build the real `/admin/bookings` filtered list view
-- [ ] Build the real `/admin/bookings/[id]` booking detail view
-- [ ] Build the real `/admin/guests` list and guest profile pages
-- [ ] Build the real `/admin/payments` view
-- [ ] Build the real `/admin/analytics` dashboard with occupancy and revenue summaries
+- [x] Build the real `/admin/properties` listing with status and availability strips
+- [x] Build the real `/admin/properties/[slug]` detail page
+- [x] Show rate plans, fees, blackout periods, and calendar blocks in admin
+- [x] Build the real `/admin/bookings` filtered list view
+- [x] Build the real `/admin/bookings/[id]` booking detail view
+- [x] Build the real `/admin/guests` list and guest profile pages
+- [x] Build the real `/admin` dashboard with occupancy and revenue summaries (merged with analytics)
 
-## 6. APIs and Actions
+## 6. API and Services
 
-- [ ] Add booking quote API
-- [ ] Add property availability API
-- [ ] Add booking creation API or server action
-- [ ] Add booking lookup API by reference
+- [x] Add booking quote API
+- [x] Add property availability API
+- [x] Add booking creation API or server action
+- [x] Add booking lookup API by reference
 - [ ] Add review submission API
 - [ ] Add Stripe webhook API with idempotency handling
 - [ ] Add route caching for the map properties endpoint
@@ -67,7 +65,7 @@ This is the living checklist for turning the current prototype into the full wor
 
 - [ ] Wire deposit PaymentIntent creation into booking creation
 - [ ] Store payment lifecycle events in the database
-- [ ] Confirm bookings after successful deposit payments
+- [x] Confirm bookings after successful deposit payments
 - [ ] Handle balance due scheduling and collection
 - [ ] Add refund and cancellation handling rules
 - [ ] Add Stripe event logging and retry safety
@@ -76,18 +74,18 @@ This is the living checklist for turning the current prototype into the full wor
 
 - [ ] Allow guests to submit reviews for completed stays
 - [ ] Allow admin replies to reviews
-- [ ] Show guest lifetime summary in the admin dashboard
+- [x] Show guest lifetime summary in the admin dashboard
 - [ ] Show published reviews on public property pages
-- [ ] Link guest records to Better Auth users when applicable
+- [x] Link guest records to Better Auth users when applicable
 
 ## 9. Hardening
 
-- [ ] Add route-level loading and error states
-- [ ] Add input validation for booking forms and API payloads
+- [x] Add route-level loading and error states
+- [x] Add input validation for booking forms and API payloads
 - [ ] Add tests for pricing, availability, and booking state transitions
 - [ ] Add smoke tests for admin and user routes
-- [ ] Run a full lint and typecheck pass across the repository
-- [ ] Update documentation if the architecture changes again
+- [x] Run a full lint and typecheck pass across the repository
+- [x] Update documentation if the architecture changes again
 
 ## 10. Current Status
 
@@ -101,9 +99,13 @@ This is the living checklist for turning the current prototype into the full wor
 - [x] Better Auth server/client auth setup added
 - [x] Next.js auth route handler added
 - [x] Development role switch flow added to `/user`
+- [x] Added quick user switching to the demo bottom nav dropdown
+- [x] Fully integrated quick sign-in test users grid on `/sign-in`
+- [x] Instagram-style User Dashboard with complete stays feed and collections
+- [x] Inline/Direct Checkout in the property details modal
+- [x] Redirect to User Dashboard upon booking success with explicit booking confirmation banner
 
 ## 11. Next Best Step
 
-- [ ] Add authenticated admin session gating and role checks
-- [ ] Replace the admin placeholder pages with live database-backed pages
-- [ ] Build the public property detail route and connect the quote/availability flow
+- [ ] Connect Stripe webhooks for production-ready payment processing
+- [ ] Add reviews and guest comments to finca stays collection
