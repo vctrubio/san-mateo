@@ -80,19 +80,24 @@ export default async function UserPage() {
           <h2 className="text-xs font-mono uppercase tracking-[0.3em] text-slate-400 select-none">Finca Stays Collection</h2>
           <div className="flex items-center gap-6 overflow-x-auto py-2 select-none">
             {[
-              { id: 'levante', name: 'Levante', icon: '🏰' },
-              { id: 'estrecho', name: 'Estrecho', icon: '🏡' },
-              { id: 'marea', name: 'Marea', icon: '🌊' },
-              { id: 'cala', name: 'Cala', icon: '🏖️' }
+              { id: 'levante', name: 'Levante', image: '/images/levante.png' },
+              { id: 'estrecho', name: 'Estrecho', image: '/images/estrecho.png' },
+              { id: 'marea', name: 'Marea', image: '/images/marea.png' },
+              { id: 'cala', name: 'Cala', image: '/images/cala.png' }
             ].map((col) => (
               <Link
                 key={col.id}
                 href={`/finca/${col.id}`}
                 className="flex flex-col items-center gap-2 group cursor-pointer shrink-0"
               >
-                <div className="w-16 h-16 rounded-full border-2 border-slate-200 group-hover:border-rose-500 p-0.5 transition-all duration-300 flex items-center justify-center bg-white shadow-sm">
-                  <div className="w-full h-full rounded-full bg-slate-50 flex items-center justify-center text-xl group-hover:scale-110 transition-transform duration-300">
-                    {col.icon}
+                <div className="w-16 h-16 rounded-full border-2 border-slate-200 group-hover:border-rose-500 p-0.5 transition-all duration-300 flex items-center justify-center bg-white shadow-sm overflow-hidden">
+                  <div className="relative w-full h-full rounded-full overflow-hidden flex items-center justify-center bg-slate-50 group-hover:scale-110 transition-transform duration-300">
+                    <Image
+                      src={col.image}
+                      alt={col.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 </div>
                 <span className="text-[11px] font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
@@ -168,14 +173,12 @@ export default async function UserPage() {
                     />
                   </div>
 
-                  {/* Activity Bar */}
-                  <div className="p-4 flex items-center justify-between border-b border-slate-50">
-                    <div className="flex items-center gap-4 text-slate-700">
-                      <Heart className="w-6 h-6 text-slate-700 hover:text-rose-500 hover:fill-rose-500 cursor-pointer transition-colors" />
-                      <MessageCircle className="w-6 h-6 text-slate-700 hover:text-ocean cursor-pointer transition-colors" />
-                      <Bookmark className="w-6 h-6 text-slate-700 hover:text-amber-500 hover:fill-amber-500 cursor-pointer transition-colors" />
-                    </div>
-                    <span className="text-xs font-bold text-slate-800 tracking-wide">
+                  {/* Booking Financial Overview */}
+                  <div className="p-4 flex items-center justify-between border-b border-slate-50 bg-slate-50/40">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Financial Summary
+                    </span>
+                    <span className="text-xs font-bold text-slate-800 tracking-wide bg-white px-3 py-1 rounded-full border border-slate-100 shadow-sm">
                       Deposit paid: €{Math.floor(booking.deposit_cents / 100).toLocaleString()}
                     </span>
                   </div>
