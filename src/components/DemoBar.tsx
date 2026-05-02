@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutDashboard, CalendarSearch } from 'lucide-react';
+import { Home, LayoutDashboard, CalendarSearch, Terminal, Map } from 'lucide-react';
 
 const links = [
   { href: '/finca',   label: 'Browse & Book', icon: Home },
   { href: '/booking', label: 'My Booking',    icon: CalendarSearch },
   { href: '/admin',   label: 'Admin View',    icon: LayoutDashboard },
+  { href: '/routes',  label: 'Routes',        icon: Map },
+  { href: '/debug',   label: 'Debug',         icon: Terminal },
 ];
 
 export default function DemoBar() {
