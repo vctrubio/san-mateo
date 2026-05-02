@@ -36,3 +36,31 @@ export async function updateDevRole(formData: FormData) {
 
   redirect(requestedRole === "admin" ? "/admin" : "/user");
 }
+
+export async function toggleUserRole() {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Dev role switching is disabled in production.");
+  }
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect("/sign-in?callbackUrl=/user");
+  }
+
+  const nextRole = session.user.role === "admin" ? "user" : "admin";
+
+  const conn = await getConnection();
+  await conn.execute(
+    "UPDATE `user` SET `role` = ?, `updatedAt` = CURRENT_TIMESTAMP WHERE `id` = ?",
+    [nextRole, session.user.id]
+  );
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/user");
+
+  redirect(nextRole === "admin" ? "/admin" : "/user");
+}

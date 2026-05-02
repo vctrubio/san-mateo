@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Home, LayoutDashboard, CalendarSearch, Terminal, Map, Shield, User, ChevronDown, LogOut } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toggleUserRole } from '@/app/actions/auth';
 
 const links = [
   { href: '/finca',   label: 'Browse & Book', icon: Home },
@@ -99,14 +100,26 @@ export default function DemoBar() {
               )}
 
               <div className="flex flex-col gap-1.5">
+                <button
+                  onClick={async () => {
+                    setDropdownOpen(false);
+                    await toggleUserRole();
+                  }}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-white/80 hover:text-white transition-colors w-full text-left select-none cursor-pointer"
+                >
+                  <span className="flex items-center gap-2.5">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs font-bold uppercase tracking-[0.15em]">Switch role</span>
+                  </span>
+                </button>
                 <Link
                   href="/user"
                   onClick={() => setDropdownOpen(false)}
                   className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-white/80 hover:text-white transition-colors"
                 >
                   <span className="flex items-center gap-2.5">
-                    <User className="w-4 h-4 text-slate-400" />
-                    <span className="text-xs font-bold uppercase tracking-[0.15em]">Switch role</span>
+                    <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs font-bold uppercase tracking-[0.15em]">User Dashboard</span>
                   </span>
                 </Link>
                 <Link
