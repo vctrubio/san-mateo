@@ -16,8 +16,12 @@ export default function PropertyAvailability() {
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   const [busyDates, setBusyDates] = useState<Date[]>([]);
-  const [bookingSuccess, setBookingSuccess] = useState<any>(null);
+  const [showGuestForm, setShowGuestForm] = useState(false);
+  const [guestFirstName, setGuestFirstName] = useState('');
+  const [guestLastName, setGuestLastName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [config, setConfig] = useState({
@@ -72,18 +76,31 @@ export default function PropertyAvailability() {
     }
   };
 
+  const handleReserveClick = () => {
+    if (!selectedProperty || !dates.start || !dates.end || isAvailable === false) return;
+    setShowGuestForm(true);
+  };
+
   const handleBooking = async () => {
     if (!selectedProperty || !dates.start || !dates.end || isAvailable === false) return;
-    
-    const res = await createInitialBooking({
-      propertyId: selectedProperty.id,
-      startDate: dates.start,
-      endDate: dates.end,
-      ...config
-    });
+    if (!guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim()) return;
+
+    setIsBooking(true);
+    const res = await createInitialBooking(
+      {
+        propertyId: selectedProperty.id,
+        startDate: dates.start,
+        endDate: dates.end,
+        ...config,
+      },
+      guestFirstName,
+      guestLastName,
+      guestEmail,
+    );
+    setIsBooking(false);
 
     if (res.success) {
-      setBookingSuccess(res as any);
+      router.push(`/booking/${(res as any).reference}`);
     } else {
       alert(`Error: ${(res as any).error}`);
     }
@@ -288,7 +305,7 @@ export default function PropertyAvailability() {
           <div className="p-6 lg:p-8 flex items-center justify-center">
             <button 
               disabled={isAvailable === false || isChecking}
-              onClick={handleBooking}
+              onClick={handleReserveClick}
               className={`
                 group flex flex-col items-center justify-center gap-1 px-12 py-6 rounded-2xl font-bold transition-all min-w-[260px]
                 ${isAvailable === false ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-ocean text-white hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-1 active:scale-95'}
@@ -318,56 +335,90 @@ export default function PropertyAvailability() {
           </div>
 
         </div>
-      {/* Booking Success Modal */}
+      {/* Guest Details Modal */}
       <AnimatePresence>
-        {bookingSuccess && (
+        {showGuestForm && (
           <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-              onClick={() => setBookingSuccess(null)}
+              onClick={() => setShowGuestForm(false)}
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-12 text-center shadow-2xl"
+              className="relative w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl"
             >
-              <div className="w-20 h-20 bg-sky-50 rounded-full flex items-center justify-center mx-auto mb-8">
-                <CheckCircle2 className="w-10 h-10 text-ocean" />
-              </div>
-              <h3 className="text-3xl font-bold text-slate-900 tracking-tighter uppercase mb-4">Request Received</h3>
-              <p className="text-slate-500 mb-8 leading-relaxed">
-                We've received your request for <span className="font-bold text-slate-900">{selectedProperty.name}</span>.
-                Reference: <span className="font-mono font-bold text-ocean">{bookingSuccess.reference}</span>
+              <button
+                onClick={() => setShowGuestForm(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+
+              <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-2">Almost there</p>
+              <h3 className="text-2xl font-bold text-slate-900 tracking-tighter mb-1">
+                Who is checking in?
+              </h3>
+              <p className="text-sm text-slate-500 mb-8">
+                {selectedProperty?.name} · {dates.start && dates.end ? `${differenceInDays(dates.end, dates.start)} nights` : ''}
               </p>
-              <div className="mb-8">
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-2">First name</label>
+                    <input
+                      type="text"
+                      value={guestFirstName}
+                      onChange={e => setGuestFirstName(e.target.value)}
+                      placeholder="María"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-ocean"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-2">Last name</label>
+                    <input
+                      type="text"
+                      value={guestLastName}
+                      onChange={e => setGuestLastName(e.target.value)}
+                      placeholder="García"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-ocean"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400 mb-2">Email address</label>
+                  <input
+                    type="email"
+                    value={guestEmail}
+                    onChange={e => setGuestEmail(e.target.value)}
+                    placeholder="maria@example.com"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none focus:border-ocean"
+                  />
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-5">
+                  <div className="flex justify-between text-sm text-slate-600">
+                    <span>{selectedProperty?.name}</span>
+                    <span>{config.adults + config.children} guests</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-slate-600 mt-1">
+                    <span>{dates.start ? format(dates.start, 'MMM d') : ''} → {dates.end ? format(dates.end, 'MMM d, yyyy') : ''}</span>
+                    <span>{dates.start && dates.end ? `${differenceInDays(dates.end, dates.start)} nights` : ''}</span>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => router.push(`/booking?reference=${bookingSuccess.reference}`)}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[10px] font-mono uppercase tracking-[0.2em] text-slate-600 transition-colors hover:border-ocean hover:text-ocean"
+                  onClick={handleBooking}
+                  disabled={isBooking || !guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim()}
+                  className="w-full py-4 bg-ocean text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-3"
                 >
-                  View booking status
+                  {isBooking ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {isBooking ? 'Creating booking…' : 'Confirm booking'}
                 </button>
               </div>
-              
-              <div className="bg-slate-50 rounded-2xl p-6 mb-8 flex justify-between items-center">
-                <div className="text-left">
-                  <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-widest">Total Amount</span>
-                  <span className="text-2xl font-bold text-slate-900">{(bookingSuccess.totalCents / 100).toFixed(2)}€</span>
-                </div>
-                <div className="text-right">
-                  <span className="block text-[10px] font-mono text-slate-400 uppercase tracking-widest">Status</span>
-                  <span className="px-3 py-1 bg-sky-100 text-ocean text-[10px] font-bold rounded-full uppercase">Pending</span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setBookingSuccess(null)}
-                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm uppercase tracking-[0.2em] hover:bg-ocean transition-all"
-              >
-                Close Summary
-              </button>
             </motion.div>
           </div>
         )}
