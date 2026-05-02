@@ -87,9 +87,10 @@ export default async function FincaPage() {
               : fallbackImages[property.slug] ?? "/images/levante.png";
 
             return (
-              <div
+              <Link
                 key={property.id}
-                className="rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm"
+                href={`/finca/${property.slug}`}
+                className="rounded-3xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200"
               >
                 <div className="relative h-48">
                   <Image
@@ -127,9 +128,10 @@ export default async function FincaPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
+
         </div>
       </section>
 

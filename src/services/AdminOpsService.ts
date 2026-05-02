@@ -64,3 +64,114 @@ export async function getAdminBookingSnapshot(): Promise<BookingSnapshot> {
     await conn.end();
   }
 }
+
+// ─── Dashboard stats ──────────────────────────────────────────────────────────
+
+export type DashboardStats = {
+  properties_active: number;
+  bookings_total: number;
+  bookings_pending: number;
+  bookings_confirmed: number;
+  revenue_total_cents: number;
+  revenue_collected_cents: number;
+  guests_total: number;
+  occupied_today: number;
+};
+
+export async function getAdminDashboardStats(): Promise<DashboardStats> {
+  const conn = await getConnection();
+  try {
+    const [rows] = (await conn.query(
+      `SELECT
+        (SELECT COUNT(*) FROM properties WHERE status = 'active' AND deleted_at IS NULL) AS properties_active,
+        (SELECT COUNT(*) FROM bookings) AS bookings_total,
+        (SELECT COUNT(*) FROM bookings WHERE status = 'pending') AS bookings_pending,
+        (SELECT COUNT(*) FROM bookings WHERE status = 'confirmed') AS bookings_confirmed,
+        (SELECT COALESCE(SUM(total_cents),0) FROM bookings WHERE status IN ('confirmed','checked_in','checked_out','completed')) AS revenue_total_cents,
+        (SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE status = 'succeeded') AS revenue_collected_cents,
+        (SELECT COUNT(*) FROM guests) AS guests_total,
+        (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = 1) AS occupied_today`
+    )) as [DashboardStats[], unknown];
+    return rows[0];
+  } finally {
+    await conn.end();
+  }
+}
+
+// ─── Analytics stats ──────────────────────────────────────────────────────────
+
+export type PropertyOccupancyRow = {
+  name: string;
+  slug: string;
+  nights_booked: number;
+  total_nights_available: number;
+  occupancy_pct: number;
+};
+
+export type MonthlyRevenueRow = {
+  month: string;
+  bookings: number;
+  revenue_cents: number;
+};
+
+export type AnalyticsStats = {
+  totalRevenue: number;
+  collectedRevenue: number;
+  outstandingRevenue: number;
+  propertyOccupancy: PropertyOccupancyRow[];
+  monthlyRevenue: MonthlyRevenueRow[];
+};
+
+export async function getAnalyticsStats(): Promise<AnalyticsStats> {
+  const conn = await getConnection();
+  try {
+    const [totals] = (await conn.query(
+      `SELECT
+        COALESCE(SUM(b.total_cents),0) AS total,
+        COALESCE(SUM(p.paid),0) AS collected
+      FROM bookings b
+      LEFT JOIN (
+        SELECT booking_id, SUM(amount_cents) AS paid FROM payments WHERE status = 'succeeded' GROUP BY booking_id
+      ) p ON p.booking_id = b.id
+      WHERE b.status IN ('confirmed','checked_in','checked_out','completed')`
+    )) as [Array<{ total: number; collected: number }>, unknown];
+
+    const [occRows] = (await conn.query(
+      `SELECT
+        p.name, p.slug,
+        COALESCE(COUNT(b.id), 0) AS nights_booked,
+        DATEDIFF(NOW(), p.created_at) AS total_nights_available,
+        ROUND(COALESCE(COUNT(b.id),0) * 100.0 / GREATEST(DATEDIFF(NOW(), p.created_at),1), 1) AS occupancy_pct
+      FROM properties p
+      LEFT JOIN bookings b ON b.property_id = p.id
+        AND b.status IN ('confirmed','checked_in','checked_out','completed')
+      WHERE p.deleted_at IS NULL
+      GROUP BY p.id, p.name, p.slug, p.created_at
+      ORDER BY occupancy_pct DESC`
+    )) as [PropertyOccupancyRow[], unknown];
+
+    const [monthRows] = (await conn.query(
+      `SELECT
+        DATE_FORMAT(check_in, '%Y-%m') AS month,
+        COUNT(*) AS bookings,
+        SUM(total_cents) AS revenue_cents
+      FROM bookings
+      WHERE status IN ('confirmed','checked_in','checked_out','completed')
+      GROUP BY month
+      ORDER BY month DESC
+      LIMIT 12`
+    )) as [MonthlyRevenueRow[], unknown];
+
+    const t = totals[0] ?? { total: 0, collected: 0 };
+    return {
+      totalRevenue: t.total,
+      collectedRevenue: t.collected,
+      outstandingRevenue: t.total - t.collected,
+      propertyOccupancy: occRows,
+      monthlyRevenue: monthRows.reverse(),
+    };
+  } finally {
+    await conn.end();
+  }
+}
+

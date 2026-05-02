@@ -42,7 +42,7 @@ const quickLinks = [
 
 function NavItem({ href, label, icon: Icon }: { href: string; label: string; icon: typeof LayoutGrid }) {
   const pathname = usePathname();
-  const isActive = pathname === href;
+  const isActive = href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
   return (
     <Link

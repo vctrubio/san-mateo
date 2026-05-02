@@ -7,7 +7,7 @@ import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameD
 import { checkPropertyAvailability, getAllProperties, createInitialBooking, getBusyDates } from '@/app/actions/booking';
 import { useRouter } from 'next/navigation';
 
-export default function PropertyAvailability() {
+export default function PropertyAvailability({ preselectedSlug }: { preselectedSlug?: string } = {}) {
   const router = useRouter();
   const [dates, setDates] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -31,7 +31,10 @@ export default function PropertyAvailability() {
   useEffect(() => {
     getAllProperties().then((data: any) => {
       setProperties(data);
-      if (data && data.length > 0) setSelectedProperty(data[0]);
+      if (data && data.length > 0) {
+        const match = preselectedSlug ? data.find((p: any) => p.slug === preselectedSlug) : null;
+        setSelectedProperty(match ?? data[0]);
+      }
     });
 
     function handleClickOutside(event: MouseEvent) {
