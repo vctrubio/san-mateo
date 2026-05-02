@@ -5,6 +5,7 @@ import { Calendar, CreditCard, Shield, User, RefreshCw, Sparkles, MapPin, CheckC
 import { updateDevRole } from '@/app/actions/auth';
 import { getCurrentSession } from '@/lib/auth-session';
 import { pool } from '../../../db/client';
+import UserHeaderActions from '@/components/UserHeaderActions';
 
 export default async function UserPage() {
   const session = await getCurrentSession();
@@ -44,15 +45,18 @@ export default async function UserPage() {
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col justify-center gap-4 text-center md:text-left select-none">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">{session.user.name}</h1>
-              <Link 
-                href="/finca"
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200/80 rounded-lg text-xs font-bold tracking-wide text-slate-800 transition-colors"
-              >
-                Book a stay
-              </Link>
+          <div className="flex-1 flex flex-col justify-center gap-4 text-center md:text-left select-none w-full">
+            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">{session.user.name}</h1>
+                <Link 
+                  href="/finca"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-lg text-xs font-bold tracking-wide text-slate-800 transition-colors"
+                >
+                  Book a stay
+                </Link>
+              </div>
+              <UserHeaderActions />
             </div>
 
             <div className="flex items-center justify-center md:justify-start gap-8 text-sm select-none">
