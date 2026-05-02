@@ -105,7 +105,7 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
     setIsBooking(false);
 
     if (res.success) {
-      router.push(`/booking/${(res as any).reference}`);
+      router.push(`/user?bookingSuccess=true&reference=${(res as any).reference}`);
     } else {
       alert(`Error: ${(res as any).error}`);
     }

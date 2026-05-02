@@ -7,7 +7,15 @@ import { getCurrentSession } from '@/lib/auth-session';
 import { pool } from '../../../db/client';
 import UserHeaderActions from '@/components/UserHeaderActions';
 
-export default async function UserPage() {
+export default async function UserPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const bookingSuccess = params.bookingSuccess === 'true';
+  const reference = typeof params.reference === 'string' ? params.reference : undefined;
+
   const session = await getCurrentSession();
 
   if (!session) {
@@ -30,6 +38,10 @@ export default async function UserPage() {
     ) as any[];
     bookings = rows || [];
   }
+
+  // Find the new booking details if referenced in URL
+  const activeNewBooking = bookings.find(b => b.reference === reference);
+
 
   return (
     <main className="min-h-screen bg-slate-50/50 pb-20">
@@ -84,6 +96,56 @@ export default async function UserPage() {
             </div>
           </div>
         </section>
+
+        {/* Booking Confirmation Alert/Banner */}
+        {activeNewBooking && (
+          <section className="bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-200/50 rounded-3xl p-6 md:p-8 space-y-5 flex flex-col md:flex-row md:items-center justify-between gap-6 select-none shadow-sm shadow-emerald-500/5 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center font-bold text-sm text-emerald-600 animate-pulse">
+                  🎉
+                </div>
+                <h3 className="text-sm font-extrabold text-emerald-900 tracking-tight">
+                  Booking SM-{activeNewBooking.reference} successfully created!
+                </h3>
+              </div>
+
+              <div className="text-xs text-slate-600 leading-relaxed max-w-xl">
+                Your reservation at <span className="font-extrabold text-slate-900 capitalize">{activeNewBooking.property_name}</span> is confirmed for{' '}
+                <span className="font-bold text-slate-800">
+                  {new Date(activeNewBooking.check_in).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {' to '}
+                  {new Date(activeNewBooking.check_out).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                </span>.
+                We are now preparing the final arrangements for your upcoming stay.
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <span className="px-2.5 py-1 bg-white border border-slate-100 rounded-full text-[10px] font-bold text-slate-700 shadow-sm uppercase tracking-wider">
+                  Total: €{Math.floor(activeNewBooking.total_cents / 100).toLocaleString()}
+                </span>
+                <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-100/50 rounded-full text-[10px] font-bold text-emerald-800 shadow-sm uppercase tracking-wider">
+                  Deposit: €{Math.floor(activeNewBooking.deposit_cents / 100).toLocaleString()} Paid
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 shrink-0 sm:w-48">
+              <Link
+                href={`/booking/${activeNewBooking.reference}`}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-all shadow-sm hover:shadow tracking-wider"
+              >
+                <span>View Receipt</span>
+              </Link>
+              <Link
+                href={`/booking?reference=${activeNewBooking.reference}`}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all shadow-sm hover:shadow tracking-wider"
+              >
+                <span>Booking lookup</span>
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* Stories/Quick Collections Section */}
         <section className="space-y-4">
