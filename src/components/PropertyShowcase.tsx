@@ -3,7 +3,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Users, X, Check, Wifi, Star } from 'lucide-react';
+import Link from 'next/link';
+import { Users, X, Check, Wifi, Star, ArrowLeft, MoveRight } from 'lucide-react';
+import PropertyAvailability from '@/components/PropertyAvailability';
 
 const properties = [
   {
@@ -50,6 +52,12 @@ const properties = [
 
 export default function PropertyShowcase() {
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
+  const [bookingMode, setBookingMode] = useState(false);
+
+  const handleOpenModal = (p: any) => {
+    setSelectedProperty(p);
+    setBookingMode(false);
+  };
 
   return (
     <section className="py-24 px-4 bg-white overflow-hidden">
@@ -89,7 +97,7 @@ export default function PropertyShowcase() {
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
               viewport={{ once: true }}
-              onClick={() => setSelectedProperty(p)}
+              onClick={() => handleOpenModal(p)}
               className={`relative aspect-[4/5] md:aspect-auto md:h-[600px] rounded-3xl overflow-hidden group cursor-pointer ${p.ratio}`}
             >
               <Image
@@ -115,7 +123,7 @@ export default function PropertyShowcase() {
         </div>
       </div>
 
-      {/* Property Peek Modal */}
+      {/* Property Peek & Live Booking Modal */}
       <AnimatePresence>
         {selectedProperty && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 md:p-8">
@@ -130,17 +138,17 @@ export default function PropertyShowcase() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-5xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row h-full max-h-[800px]"
+              className="relative w-full max-w-6xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col md:flex-row h-full max-h-[850px] z-[1001]"
             >
               <button 
                 onClick={() => setSelectedProperty(null)}
-                className="absolute top-6 right-6 z-50 p-2 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-full text-white transition-all"
+                className="absolute top-6 right-6 z-50 p-2 bg-white/20 backdrop-blur-md hover:bg-white/40 rounded-full text-slate-800 hover:text-slate-900 transition-all border border-slate-100"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
 
-              {/* Left: Image */}
-              <div className="relative w-full md:w-1/2 h-64 md:h-auto shrink-0">
+              {/* Left: Beautiful Hero Image */}
+              <div className="relative w-full md:w-1/2 h-64 md:h-auto shrink-0 select-none">
                 <Image 
                   src={selectedProperty.image} 
                   alt={selectedProperty.name} 
@@ -155,55 +163,95 @@ export default function PropertyShowcase() {
                 </div>
               </div>
 
-              {/* Right: Info */}
-              <div className="flex-1 p-8 md:p-16 flex flex-col justify-center overflow-y-auto">
-                <div className="mb-8">
-                  <span className="text-xs font-mono text-ocean uppercase tracking-[0.4em] block mb-4">The Selection</span>
-                  <h3 className="text-4xl md:text-6xl font-bold text-slate-900 tracking-tighter uppercase mb-4">{selectedProperty.name}</h3>
-                  <p className="text-slate-500 text-lg leading-relaxed">{selectedProperty.description}</p>
-                </div>
+              {/* Right: Info OR Availability Flow */}
+              <div className="flex-1 p-8 md:p-12 flex flex-col justify-start overflow-y-auto">
+                <AnimatePresence mode="wait">
+                  {!bookingMode ? (
+                    <motion.div
+                      key="details"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col justify-between h-full"
+                    >
+                      <div>
+                        <span className="text-xs font-mono text-ocean uppercase tracking-[0.4em] block mb-2">The Selection</span>
+                        <h3 className="text-4xl md:text-5xl font-bold text-slate-900 tracking-tighter uppercase mb-4 leading-none">{selectedProperty.name}</h3>
+                        <p className="text-slate-500 text-sm md:text-base leading-relaxed mb-6">{selectedProperty.description}</p>
 
-                <div className="grid grid-cols-2 gap-8 mb-12">
-                  <div>
-                    <h4 className="text-[10px] font-mono text-slate-300 uppercase tracking-widest mb-4">Capacity</h4>
-                    <div className="flex items-center gap-3">
-                      <Users className="w-5 h-5 text-ocean" />
-                      <span className="font-bold text-slate-900 uppercase text-sm">Sleeps {selectedProperty.capacity}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-[10px] font-mono text-slate-300 uppercase tracking-widest mb-4">Connectivity</h4>
-                    <div className="flex items-center gap-3">
-                      <Wifi className="w-5 h-5 text-ocean" />
-                      <span className="font-bold text-slate-900 uppercase text-sm">Starlink 5G</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-12">
-                  <h4 className="text-[10px] font-mono text-slate-300 uppercase tracking-widest mb-6">Property Features</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {selectedProperty.features.map((f: string) => (
-                      <div key={f} className="flex items-center gap-3">
-                        <div className="w-5 h-5 bg-sky-50 rounded-full flex items-center justify-center">
-                          <Check className="w-3 h-3 text-ocean" />
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/60">
+                            <h4 className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-2">Capacity</h4>
+                            <div className="flex items-center gap-2.5">
+                              <Users className="w-4 h-4 text-ocean shrink-0" />
+                              <span className="font-bold text-slate-900 uppercase text-xs">Sleeps {selectedProperty.capacity} Guests</span>
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/60">
+                            <h4 className="text-[9px] font-mono text-slate-400 uppercase tracking-widest mb-2">Connectivity</h4>
+                            <div className="flex items-center gap-2.5">
+                              <Wifi className="w-4 h-4 text-ocean shrink-0" />
+                              <span className="font-bold text-slate-900 uppercase text-xs">Starlink 5G</span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-sm text-slate-600">{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
-                <button 
-                  onClick={() => {
-                    setSelectedProperty(null);
-                    const el = document.getElementById('availability-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="w-full py-6 bg-slate-900 text-white rounded-3xl font-bold text-sm uppercase tracking-[0.2em] hover:bg-ocean transition-all duration-300"
-                >
-                  Book this space
-                </button>
+                        <div className="mb-6">
+                          <h4 className="text-[9px] font-mono text-slate-300 uppercase tracking-widest mb-3">Property Features</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            {selectedProperty.features.map((f: string) => (
+                              <div key={f} className="flex items-center gap-2.5">
+                                <div className="w-4.5 h-4.5 bg-sky-50 rounded-full flex items-center justify-center shrink-0">
+                                  <Check className="w-3 h-3 text-ocean" />
+                                </div>
+                                <span className="text-xs text-slate-600 font-medium">{f}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-4 border-t border-slate-50 mt-auto">
+                        <Link
+                          href={`/finca/${selectedProperty.id}`}
+                          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-slate-200 text-slate-700 hover:text-ocean hover:border-ocean hover:bg-slate-50 transition-all duration-300 font-bold uppercase tracking-[0.2em] text-xs"
+                        >
+                          <span>Full Property details</span>
+                          <MoveRight className="w-3.5 h-3.5" />
+                        </Link>
+                        <button 
+                          onClick={() => setBookingMode(true)}
+                          className="w-full py-5 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-ocean hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all duration-300 select-none flex items-center justify-center gap-2"
+                        >
+                          <span>Book this space</span>
+                          <MoveRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="booking"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col h-full"
+                    >
+                      <button
+                        onClick={() => setBookingMode(false)}
+                        className="flex items-center gap-2.5 text-[10px] font-mono text-slate-400 uppercase tracking-[0.2em] hover:text-ocean transition-colors mb-6 text-left select-none"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+                        <span>Go back to property details</span>
+                      </button>
+
+                      <div className="flex-1 overflow-y-auto pr-1">
+                        <PropertyAvailability preselectedSlug={selectedProperty.id} />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </div>
