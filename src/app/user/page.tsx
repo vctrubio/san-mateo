@@ -35,23 +35,27 @@ export default async function UserPage() {
     <main className="min-h-screen bg-slate-50/50 pb-20">
       <div className="max-w-4xl mx-auto px-4 pt-12 space-y-12">
 
-        {/* Profile Header (Instagram style) */}
-        <section className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-14 border-b border-slate-200/60 pb-10">
-          <div className="w-24 h-24 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 p-1 shrink-0 flex items-center justify-center select-none cursor-pointer hover:scale-105 transition-transform duration-300">
+        {/* Profile Header (High-End Instagram/SaaS style) */}
+        <section className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-14 border-b border-slate-200/60 pb-12 select-none">
+          {/* Circular Story Avatar */}
+          <div className="w-24 h-24 md:w-36 md:h-36 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 p-1 shrink-0 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform duration-300 shadow-lg shadow-rose-500/10">
             <div className="w-full h-full bg-white rounded-full p-1">
-              <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center font-bold text-3xl md:text-5xl text-slate-700">
+              <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center font-extrabold text-3xl md:text-5xl text-slate-700 tracking-tight select-none">
                 {session.user.name?.[0] ?? '?'}
               </div>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col justify-center gap-4 text-center md:text-left select-none w-full">
-            <div className="flex flex-wrap items-center justify-between gap-4 w-full">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">{session.user.name}</h1>
+          {/* User Info & Quick Links */}
+          <div className="flex-1 flex flex-col justify-center gap-5 text-center md:text-left w-full">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3.5">
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900 leading-none">
+                  {session.user.name}
+                </h1>
                 <Link 
                   href="/finca"
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-lg text-xs font-bold tracking-wide text-slate-800 transition-colors"
+                  className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold tracking-wide transition-all border border-slate-200/40 select-none"
                 >
                   Book a stay
                 </Link>
@@ -59,21 +63,23 @@ export default async function UserPage() {
               <UserHeaderActions />
             </div>
 
+            {/* Profile Statistics (Instagram style bio layout) */}
             <div className="flex items-center justify-center md:justify-start gap-8 text-sm select-none">
-              <div className="flex flex-col md:flex-row items-center gap-1">
-                <span className="font-bold text-slate-900">{bookings.length}</span>
-                <span className="text-slate-500 font-normal">stays</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-900 text-base">{bookings.length}</span>
+                <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">stays</span>
               </div>
-              <div className="flex flex-col md:flex-row items-center gap-1">
-                <span className="font-bold text-slate-900">{session.user.role}</span>
-                <span className="text-slate-500 font-normal">role</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-slate-900 text-base capitalize">{session.user.role}</span>
+                <span className="text-slate-500 text-xs font-medium uppercase tracking-wider">role</span>
               </div>
             </div>
 
-            <div>
-              <p className="text-sm font-semibold text-slate-800">{session.user.email}</p>
-              <p className="text-xs text-slate-500 leading-relaxed font-mono mt-0.5">
-                Spain · Tarifa Coastal Estate · San Mateo
+            {/* Address & Credentials info */}
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-800 font-mono tracking-tight">{session.user.email}</p>
+              <p className="text-xs text-slate-400 font-mono uppercase tracking-[0.2em]">
+                Spain &middot; Tarifa Coastal Estate &middot; San Mateo
               </p>
             </div>
           </div>
