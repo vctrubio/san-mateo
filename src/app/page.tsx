@@ -9,11 +9,11 @@ export default function Home() {
     <main className="min-h-screen">
       <HeroLanding />
       <PropertyShowcase />
-      <section className="py-20 px-4 bg-white">
+      {/* <section className="py-20 px-4 bg-white">
         <div className="max-w-[1400px] mx-auto">
           <PropertyAvailability />
         </div>
-      </section>
+      </section> */}
       <AboutSection />
       <Footer />
     </main>

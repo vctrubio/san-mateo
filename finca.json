@@ -1,7 +1,7 @@
 {
   "name": "San Mateo",
   "subtitle": "Tarifa",
-  "est": "1984",
+  "est": "2002",
   "description": "A coastal haven in the south of Spain, perfect for surf and wind lovers. Surrounded by nature and the Atlantic Ocean.",
   "location": {
     "city": "Tarifa",
@@ -34,8 +34,16 @@
   ],
   "travel": {
     "airports": [
-      { "name": "Malaga (AGP)", "distance": "150 km", "time": "1h 45m drive" },
-      { "name": "Sevilla (SVQ)", "distance": "200 km", "time": "2h 15m drive" }
+      {
+        "name": "Malaga (AGP)",
+        "distance": "150 km",
+        "time": "1h 45m drive"
+      },
+      {
+        "name": "Sevilla (SVQ)",
+        "distance": "200 km",
+        "time": "2h 15m drive"
+      }
     ],
     "strait": {
       "name": "Tangier (TNG)",
