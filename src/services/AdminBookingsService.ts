@@ -19,8 +19,8 @@ export type AdminBookingRow = {
 
 export type AdminBookingDetail = {
   booking: AdminBookingRow | null;
-  fees: Array<{ id: string; name: string; calculation: string; amount_cents: number; currency: string }>;
-  payments: Array<{ id: string; kind: string; amount_cents: number; currency: string; status: string; paid_at: string | null }>; 
+  fees: Array<{ id: string; name: string; calculation: string; amount_cents: number }>;
+  payments: Array<{ id: string; kind: string; amount_cents: number; status: string; paid_at: string | null }>; 
   events: Array<{ id: string; event_type: string; actor_type: string | null; created_at: string }>; 
 };
 
@@ -39,14 +39,14 @@ export async function getAdminBookings() {
         b.created_at,
         p.name AS property_name,
         p.slug AS property_slug,
-        CONCAT_WS(' ', g.first_name, g.last_name) AS guest_name,
-        g.email AS guest_email,
+        u.name AS guest_name,
+        u.email AS guest_email,
         v.payment_state,
         v.paid_cents,
         v.outstanding_cents
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       ORDER BY b.created_at DESC`
     )) as [AdminBookingRow[], unknown];
@@ -72,14 +72,14 @@ export async function getAdminBookingById(id: string): Promise<AdminBookingDetai
         b.created_at,
         p.name AS property_name,
         p.slug AS property_slug,
-        CONCAT_WS(' ', g.first_name, g.last_name) AS guest_name,
-        g.email AS guest_email,
+        u.name AS guest_name,
+        u.email AS guest_email,
         v.payment_state,
         v.paid_cents,
         v.outstanding_cents
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       WHERE b.id = ?
       LIMIT 1`,
@@ -93,20 +93,20 @@ export async function getAdminBookingById(id: string): Promise<AdminBookingDetai
     }
 
     const [feeRows] = (await conn.query(
-      `SELECT id, name, calculation, amount_cents, currency
+      `SELECT id, name, calculation, amount_cents
        FROM booking_fees
        WHERE booking_id = ?
        ORDER BY created_at ASC`,
       [booking.id]
-    )) as [Array<{ id: string; name: string; calculation: string; amount_cents: number; currency: string }>, unknown];
+    )) as [Array<{ id: string; name: string; calculation: string; amount_cents: number }>, unknown];
 
     const [paymentRows] = (await conn.query(
-      `SELECT id, kind, amount_cents, currency, status, paid_at
+      `SELECT id, kind, amount_cents, status, paid_at
        FROM payments
        WHERE booking_id = ?
        ORDER BY created_at ASC`,
       [booking.id]
-    )) as [Array<{ id: string; kind: string; amount_cents: number; currency: string; status: string; paid_at: string | null }>, unknown];
+    )) as [Array<{ id: string; kind: string; amount_cents: number; status: string; paid_at: string | null }>, unknown];
 
     const [eventRows] = (await conn.query(
       `SELECT id, event_type, actor_type, created_at

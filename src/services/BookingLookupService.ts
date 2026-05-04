@@ -30,14 +30,14 @@ export async function getBookingByReference(reference: string) {
         b.created_at,
         p.name AS property_name,
         p.slug AS property_slug,
-        CONCAT_WS(' ', g.first_name, g.last_name) AS guest_name,
-        g.email AS guest_email,
+        u.name AS guest_name,
+        u.email AS guest_email,
         v.payment_state,
         v.paid_cents,
         v.outstanding_cents
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       WHERE b.reference = ?
       LIMIT 1`,

@@ -32,11 +32,11 @@ export async function getAdminBookingSnapshot(): Promise<BookingSnapshot> {
 
     const [recentRows] = (await conn.query(
       `SELECT b.reference, b.status, b.check_in, b.check_out, b.total_cents,
-        p.name AS property_name, g.email AS guest_email,
+        p.name AS property_name, u.email AS guest_email,
         v.payment_state
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       ORDER BY b.created_at DESC
       LIMIT 6`
@@ -44,11 +44,11 @@ export async function getAdminBookingSnapshot(): Promise<BookingSnapshot> {
 
     const [pendingRows] = (await conn.query(
       `SELECT b.reference, b.status, b.check_in, b.check_out, b.total_cents,
-        p.name AS property_name, g.email AS guest_email,
+        p.name AS property_name, u.email AS guest_email,
         v.payment_state
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       WHERE b.status = 'pending'
       ORDER BY b.created_at DESC
@@ -89,7 +89,7 @@ export async function getAdminDashboardStats(): Promise<DashboardStats> {
         (SELECT COUNT(*) FROM bookings WHERE status = 'confirmed') AS bookings_confirmed,
         (SELECT COALESCE(SUM(total_cents),0) FROM bookings WHERE status IN ('confirmed','checked_in','checked_out','completed')) AS revenue_total_cents,
         (SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE status = 'succeeded') AS revenue_collected_cents,
-        (SELECT COUNT(*) FROM guests) AS guests_total,
+        (SELECT COUNT(DISTINCT user_id) FROM bookings) AS guests_total,
         (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = TRUE) AS occupied_today`
     )) as [DashboardStats[], unknown];
     return rows[0];

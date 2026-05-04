@@ -22,7 +22,7 @@ export class BookingService {
     return AvailabilityService.isAvailable(propertyId, start, end);
   }
 
-  static async createBooking(config: BookingConfig, guestId: string) {
+  static async createBooking(config: BookingConfig, userId: string) {
     const conn = await getConnection();
 
     // Atomic check and block
@@ -33,7 +33,7 @@ export class BookingService {
 
     // 1. Get property details
     const [propertyRows]: any = await conn.query(
-      'SELECT base_price_cents, currency FROM properties WHERE id = ?',
+      'SELECT base_price_cents FROM properties WHERE id = ?',
       [config.propertyId]
     );
     const property = propertyRows[0];
@@ -58,25 +58,21 @@ export class BookingService {
 
       await conn.query(
         `INSERT INTO bookings (
-          id, reference, property_id, guest_id, check_in, check_out, nights,
-          num_adults, num_children, num_infants,
-          currency, nightly_rate_cents, accommodation_cents, fees_cents, taxes_cents,
+          id, reference, property_id, user_id, check_in, check_out, nights,
+          guests, nightly_rate_cents, accommodation_cents, fees_cents, taxes_cents,
           discount_cents, length_of_stay_discount_cents, length_of_stay_discount_name,
           total_cents, deposit_percentage, deposit_cents, balance_cents, balance_due_at,
           status, source, guest_message, admin_notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       , [
         bookingId,
         reference,
         config.propertyId,
-        guestId,
+        userId,
         parsedStartDate.toISOString().split('T')[0],
         parsedEndDate.toISOString().split('T')[0],
         nights,
-        config.adults,
-        config.children,
-        config.babies,
-        property.currency,
+        JSON.stringify({ adults: config.adults, children: config.children, infants: config.babies, hasPets: config.hasPets }),
         property.base_price_cents,
         baseTotal,
         cleaningFee + petFee,
@@ -103,26 +99,25 @@ export class BookingService {
         bookingId,
         'booking.created',
         JSON.stringify({ reference, propertyId: config.propertyId }),
-        'guest',
-        guestId,
+        'user',
+        userId,
       ]);
 
       await conn.query(
         `INSERT INTO payments (
-          id, booking_id, kind, amount_cents, currency, status, due_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+          id, booking_id, kind, amount_cents, status, due_at
+        ) VALUES (?, ?, ?, ?, ?, ?)`
       , [
         crypto.randomUUID(),
         bookingId,
         'deposit',
         Math.round(totalCents * 0.5),
-        property.currency,
         'pending',
         null,
       ]);
 
       await conn.commit();
-      return { bookingId, reference, totalCents, currency: property.currency };
+      return { bookingId, reference, totalCents, currency: 'EUR' };
     } catch (error) {
       await conn.rollback();
       throw error;
