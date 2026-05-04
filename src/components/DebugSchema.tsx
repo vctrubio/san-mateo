@@ -22,55 +22,55 @@ const tables: TableCard[] = [
     name: 'properties',
     purpose: 'Rentable units inside the estate, including map coordinates.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'slug', type: 'VARCHAR', note: 'public route key' },
-      { name: 'property_type', type: 'VARCHAR' },
-      { name: 'base_price_cents', type: 'INT' },
-      { name: 'map_x / map_y / map_z', type: 'DECIMAL' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Internal UUID' },
+      { name: 'slug', type: 'VARCHAR', note: 'URL identifier (e.g. "villa-sol")' },
+      { name: 'property_type', type: 'VARCHAR', note: 'e.g. "Villa", "Room", "Apartment"' },
+      { name: 'base_price_cents', type: 'INT', note: 'Nightly rate in EUR cents' },
+      { name: 'map_x / map_y / map_z', type: 'DECIMAL', note: '3D coordinate markers for the map' },
     ],
   },
   {
     name: 'property_photos',
     purpose: 'Photo metadata only. Storage keys point to Supabase or object storage.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'property_id', type: 'VARCHAR', foreign: 'properties.id' },
-      { name: 'storage_key', type: 'VARCHAR' },
-      { name: 'is_cover', type: 'BOOLEAN' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Internal UUID' },
+      { name: 'property_id', type: 'VARCHAR', foreign: 'properties.id', note: 'Owner property' },
+      { name: 'storage_key', type: 'VARCHAR', note: 'Unique file path in bucket' },
+      { name: 'is_cover', type: 'BOOLEAN', note: 'True if main gallery image' },
     ],
   },
   {
     name: 'bookings',
     purpose: 'Immutable reservation record with snapshot pricing and deposit math.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'reference', type: 'VARCHAR', note: 'public booking code' },
-      { name: 'property_id', type: 'VARCHAR', foreign: 'properties.id' },
-      { name: 'user_id', type: 'VARCHAR', foreign: '"user".id' },
-      { name: 'check_in / check_out', type: 'DATE' },
-      { name: 'status', type: 'VARCHAR' },
-      { name: 'total_cents', type: 'INT' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Internal UUID' },
+      { name: 'reference', type: 'VARCHAR', note: 'Human-readable public ID for URLs/Emails (e.g. SMK-2024-X45)' },
+      { name: 'property_id', type: 'VARCHAR', foreign: 'properties.id', note: 'Which unit is booked' },
+      { name: 'user_id', type: 'VARCHAR', foreign: '"user".id', note: 'Who booked it' },
+      { name: 'check_in / check_out', type: 'DATE', note: 'Stay dates' },
+      { name: 'status', type: 'VARCHAR', note: 'e.g. "pending", "confirmed", "cancelled"' },
+      { name: 'total_cents', type: 'INT', note: 'Snapshot of price at time of booking' },
     ],
   },
   {
     name: 'payments',
     purpose: 'Stripe-backed payment rows for deposit and balance collection.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'booking_id', type: 'VARCHAR', foreign: 'bookings.id' },
-      { name: 'kind', type: 'VARCHAR' },
-      { name: 'status', type: 'VARCHAR' },
-      { name: 'stripe_payment_intent_id', type: 'VARCHAR' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Internal UUID' },
+      { name: 'booking_id', type: 'VARCHAR', foreign: 'bookings.id', note: 'Associated reservation' },
+      { name: 'kind', type: 'VARCHAR', note: 'e.g. "deposit" or "balance"' },
+      { name: 'status', type: 'VARCHAR', note: 'e.g. "succeeded" or "failed"' },
+      { name: 'stripe_payment_intent_id', type: 'VARCHAR', note: 'External bank reference' },
     ],
   },
   {
     name: '"user"',
     purpose: 'Better Auth user.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'name', type: 'VARCHAR' },
-      { name: 'email', type: 'VARCHAR' },
-      { name: 'role', type: 'VARCHAR' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Better Auth ID' },
+      { name: 'name', type: 'VARCHAR', note: 'Display name' },
+      { name: 'email', type: 'VARCHAR', note: 'Unique login credential' },
+      { name: 'role', type: 'VARCHAR', note: 'e.g. "admin" or "user"' },
     ],
   },
   {
@@ -149,7 +149,7 @@ function TableCard({ table }: { table: TableCard }) {
             .filter((field) => field.note)
             .map((field) => (
               <p key={field.name} className="text-[10px] font-mono text-slate-400 uppercase tracking-widest leading-relaxed">
-                {field.note}
+                <span className="text-slate-900 font-bold">{field.name}:</span> {field.note}
               </p>
             ))}
         </div>
