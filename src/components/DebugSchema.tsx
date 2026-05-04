@@ -65,12 +65,22 @@ const tables: TableCard[] = [
   },
   {
     name: '"user"',
-    purpose: 'Better Auth user.',
+    purpose: 'Core identity record. Represents a unique person on the platform.',
     fields: [
-      { name: 'id', type: 'VARCHAR', primary: true, note: 'Better Auth ID' },
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Unique identifier for the person' },
       { name: 'name', type: 'VARCHAR', note: 'Display name' },
-      { name: 'email', type: 'VARCHAR', note: 'Unique login credential' },
-      { name: 'role', type: 'VARCHAR', note: 'e.g. "admin" or "user"' },
+      { name: 'email', type: 'VARCHAR', note: 'Primary contact and identity key' },
+      { name: 'role', type: 'VARCHAR', note: 'e.g. "admin" (staff) or "user" (customer)' },
+    ],
+  },
+  {
+    name: 'account',
+    purpose: 'Authentication credentials. One user can have multiple accounts (e.g. Password + Google).',
+    fields: [
+      { name: 'id', type: 'VARCHAR', primary: true, note: 'Internal UUID' },
+      { name: '"userId"', type: 'VARCHAR', foreign: '"user".id', note: 'The person this login belongs to' },
+      { name: '"providerId"', type: 'VARCHAR', note: 'e.g. "credential" (password) or "google"' },
+      { name: 'password', type: 'TEXT', note: 'Hashed password (only for "credential" provider)' },
     ],
   },
   {
