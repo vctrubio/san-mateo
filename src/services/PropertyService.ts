@@ -44,3 +44,27 @@ export async function getPropertySummaries(): Promise<PropertySummary[]> {
     await conn.end();
   }
 }
+
+export type PropertyAmenityMap = Record<string, string[]>;
+
+export async function getAllPropertyAmenities(): Promise<PropertyAmenityMap> {
+  const conn = await getConnection();
+  try {
+    const [rows] = (await conn.query(
+      `SELECT p.slug, a.label
+       FROM properties p
+       JOIN property_amenities pa ON p.id = pa.property_id
+       JOIN amenities a ON a.id = pa.amenity_id
+       WHERE p.deleted_at IS NULL`
+    )) as [Array<{ slug: string; label: string }>, unknown];
+
+    const map: PropertyAmenityMap = {};
+    rows.forEach(row => {
+      if (!map[row.slug]) map[row.slug] = [];
+      map[row.slug].push(row.label);
+    });
+    return map;
+  } finally {
+    await conn.end();
+  }
+}

@@ -36,6 +36,7 @@ const routeGroups = [
   {
     category: 'Developer & API',
     routes: [
+      { path: '/debug', label: 'Debug dashboard', description: 'Internal testing and database visualization tools' },
       { path: '/api/bookings/SM-SAMPLE', label: 'Booking lookup API', description: 'JSON response endpoint for reference queries' },
       { path: '/api/auth/all', label: 'Authentication API', description: 'Better Auth server plugin listener' },
     ],
@@ -47,11 +48,11 @@ san-mateo/src/app/
 ├── actions/
 │   ├── admin-bookings.ts
 │   ├── admin-guests.ts
+│   ├── auth.ts
 │   ├── booking.ts
+│   ├── mock.ts
 │   └── users.ts
 ├── admin/
-│   ├── analytics/
-│   │   └── page.tsx
 │   ├── bookings/
 │   │   ├── [id]/
 │   │   │   └── page.tsx
@@ -78,6 +79,8 @@ san-mateo/src/app/
 ├── booking/
 │   ├── [reference]/
 │   │   └── page.tsx
+│   └── page.tsx
+├── debug/
 │   └── page.tsx
 ├── finca/
 │   ├── [slug]/
