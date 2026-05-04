@@ -22,22 +22,18 @@ export default async function UserPage({
     redirect('/sign-in?callbackUrl=/user');
   }
 
-  // Fetch guest record and associated bookings
-  const [guests] = await pool.query('SELECT * FROM guests WHERE email = ?', [session.user.email]) as any[];
-  const guest = guests[0];
+  // Fetch associated bookings
   let bookings: any[] = [];
 
-  if (guest) {
-    const [rows] = await pool.query(
-      `SELECT b.*, p.name as property_name, p.slug as property_slug
-       FROM bookings b
-       JOIN properties p ON p.id = b.property_id
-       WHERE b.guest_id = ?
-       ORDER BY b.check_in DESC`,
-      [guest.id]
-    ) as any[];
-    bookings = rows || [];
-  }
+  const [rows] = await pool.query(
+    `SELECT b.*, p.name as property_name, p.slug as property_slug
+     FROM bookings b
+     JOIN properties p ON p.id = b.property_id
+     WHERE b.user_id = ?
+     ORDER BY b.check_in DESC`,
+    [session.user.id]
+  ) as any[];
+  bookings = rows || [];
 
   // Find the new booking details if referenced in URL
   const activeNewBooking = bookings.find(b => b.reference === reference);

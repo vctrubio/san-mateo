@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CalendarDays, Wallet } from 'lucide-react';
 import { getAdminPayments } from '@/services/AdminPaymentsService';
 
-function formatMoney(cents: number | null | undefined, currency: string) {
+function formatMoney(cents: number | null | undefined, currency: string = 'EUR') {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',
     currency,
@@ -58,7 +58,7 @@ export default async function AdminPaymentsPage() {
                   {payment.kind}
                 </div>
                 <div className="mt-2 text-sm font-bold text-slate-900">
-                  {formatMoney(payment.amount_cents, payment.currency)}
+                  {formatMoney(payment.amount_cents, 'EUR')}
                 </div>
                 <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-ocean">{payment.status}</div>
               </div>

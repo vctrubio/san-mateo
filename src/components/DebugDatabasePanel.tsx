@@ -1,6 +1,7 @@
 import React from 'react';
 import { pool } from '../../db/client';
 import { CalendarDays, Database, Euro, Home, MapPin, MessageSquare, Users } from 'lucide-react';
+import fincaData from '../../finca.json';
 
 type FincaRow = {
   name: string;
@@ -32,8 +33,7 @@ type BookingRow = {
   total_cents: number;
   property_name: string;
   property_slug: string;
-  first_name: string;
-  last_name: string;
+  guest_name: string | null;
   email: string;
   payment_state: string | null;
   paid_cents: number;
@@ -41,10 +41,9 @@ type BookingRow = {
 };
 
 type GuestSummaryRow = {
-  guest_id: string;
+  user_id: string;
   email: string;
-  first_name: string | null;
-  last_name: string | null;
+  full_name: string | null;
   stays_completed: number;
   lifetime_spend_cents: number;
   avg_rating_given: number | null;
@@ -78,7 +77,6 @@ function formatDate(value: string | null | undefined) {
 }
 
 export default async function DebugDatabasePanel() {
-  let finca: FincaRow | null = null;
   let properties: PropertyRow[] = [];
   let bookings: BookingRow[] = [];
   let guests: GuestSummaryRow[] = [];
@@ -86,7 +84,6 @@ export default async function DebugDatabasePanel() {
   let error: string | null = null;
 
   try {
-    const [fincaRows] = (await pool.query('SELECT * FROM fincas LIMIT 1')) as [FincaRow[], unknown];
     const [propertyRows] = (await pool.query(
       `SELECT p.*, ph.storage_key AS cover_photo_key,
         COALESCE(ps.is_occupied_today::int, 0) AS is_occupied_today,
@@ -106,11 +103,11 @@ export default async function DebugDatabasePanel() {
     const [bookingRows] = (await pool.query(
       `SELECT b.reference, b.status, b.check_in, b.check_out, b.total_cents,
         p.name AS property_name, p.slug AS property_slug,
-        g.first_name, g.last_name, g.email,
+        u.name AS guest_name, u.email,
         v.payment_state, v.paid_cents, v.outstanding_cents
       FROM bookings b
       JOIN properties p ON p.id = b.property_id
-      JOIN guests g ON g.id = b.guest_id
+      JOIN "user" u ON u.id = b.user_id
       LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
       ORDER BY b.created_at DESC
       LIMIT 6`
@@ -130,7 +127,6 @@ export default async function DebugDatabasePanel() {
         (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = TRUE) AS occupied_today_count`
     )) as [StatsRow[], unknown];
 
-    finca = fincaRows[0];
     properties = propertyRows;
     bookings = bookingRows;
     guests = guestRows;
@@ -174,17 +170,17 @@ export default async function DebugDatabasePanel() {
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
               <div className="flex justify-between items-start gap-4 mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">{finca?.name}</h3>
+                  <h3 className="text-xl font-bold text-slate-900">{fincaData.name}</h3>
                   <p className="text-sm text-slate-500 font-mono flex items-center gap-2">
                     <MapPin className="w-3.5 h-3.5" />
-                    {finca?.city}, {finca?.country}
+                    {fincaData.location.city}, {fincaData.location.country}
                   </p>
                 </div>
                 <span className="px-3 py-1 bg-sky-100 text-ocean text-[10px] font-mono uppercase tracking-wider rounded-full">
                   Primary Estate
                 </span>
               </div>
-              <p className="text-sm text-slate-600 max-w-3xl italic leading-relaxed">“{finca?.description}”</p>
+              <p className="text-sm text-slate-600 max-w-3xl italic leading-relaxed">“{fincaData.description}”</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -246,7 +242,7 @@ export default async function DebugDatabasePanel() {
                       <div>
                         <div className="font-bold text-slate-900">{booking.reference}</div>
                         <div className="text-xs text-slate-500 font-mono">
-                          {booking.property_name} · {booking.first_name} {booking.last_name}
+                          {booking.property_name} · {booking.guest_name}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono uppercase tracking-widest">
                           {formatDate(booking.check_in)} → {formatDate(booking.check_out)}
@@ -268,10 +264,10 @@ export default async function DebugDatabasePanel() {
                 </div>
                 <div className="space-y-4">
                   {guests.map((guest) => (
-                    <div key={guest.guest_id} className="border-t border-slate-50 pt-4 first:border-t-0 first:pt-0">
+                    <div key={guest.user_id} className="border-t border-slate-50 pt-4 first:border-t-0 first:pt-0">
                       <div className="flex items-center justify-between gap-4">
                         <div>
-                          <div className="font-bold text-slate-900">{guest.first_name} {guest.last_name}</div>
+                          <div className="font-bold text-slate-900">{guest.full_name}</div>
                           <div className="text-xs text-slate-500 font-mono">{guest.email}</div>
                         </div>
                         <div className="text-right">

@@ -17,14 +17,11 @@ export async function seedMockData() {
       "Pablo Navarro", "Raquel Torres", "Sergio Domínguez", "Cristina Ramos", "Lucas Gil"
     ];
 
-    const [fincas] = await pool.query('SELECT id FROM fincas LIMIT 1') as any[];
     const [properties] = await pool.query('SELECT id, slug, base_price_cents FROM properties WHERE deleted_at IS NULL') as any[];
 
-    if (!fincas || fincas.length === 0 || !properties || properties.length === 0) {
-      throw new Error("Missing finca/properties. Please make sure the DB is seeded first.");
+    if (!properties || properties.length === 0) {
+      throw new Error("Missing properties. Please make sure the DB is seeded first.");
     }
-
-    const fincaId = fincas[0].id;
 
     for (let i = 0; i < names.length; i++) {
       const email = `mockuser${i + 1}@sanmateo.test`;
@@ -43,11 +40,7 @@ export async function seedMockData() {
         [`account_mock_${i + 1}`, email, 'credential', userId, passwordHash]
       );
 
-      // Insert Guest
-      await pool.execute(
-        `INSERT INTO guests (id, email, first_name, last_name, user_id) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-        [guestId, email, names[i].split(" ")[0], names[i].split(" ")[1], userId]
-      );
+      // User inserted above
 
       // We'll generate 1 test booking per mock user to light up real booking and revenue streams
       const property = properties[i % properties.length];
@@ -63,15 +56,16 @@ export async function seedMockData() {
 
       await pool.execute(
         `INSERT INTO bookings (
-          id, reference, property_id, guest_id, check_in, check_out, nights, num_adults,
-          currency, nightly_rate_cents, accommodation_cents, total_cents, deposit_percentage,
+          id, reference, property_id, user_id, check_in, check_out, nights, guests,
+          nightly_rate_cents, accommodation_cents, total_cents, deposit_percentage,
           deposit_cents, balance_cents, status, source
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
         [
-          bookingId, ref, property.id, guestId,
+          bookingId, ref, property.id, userId,
           checkInDate.toISOString().split('T')[0],
           checkOutDate.toISOString().split('T')[0],
-          nights, 2, 'EUR', property.base_price_cents, totalCents, totalCents, 50,
+          nights, JSON.stringify({ adults: 2, children: 0, infants: 0, hasPets: false }),
+          property.base_price_cents, totalCents, totalCents, 50,
           Math.floor(totalCents / 2), Math.floor(totalCents / 2),
           i % 3 === 0 ? 'confirmed' : i % 3 === 1 ? 'completed' : 'pending',
           'direct'
@@ -80,14 +74,14 @@ export async function seedMockData() {
 
       // Insert deposit payment
       await pool.execute(
-        `INSERT INTO payments (id, booking_id, kind, amount_cents, currency, status) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-        [`mock_payment_${i + 1}_dep`, bookingId, 'deposit', Math.floor(totalCents / 2), 'EUR', i % 3 === 1 || i % 3 === 0 ? 'succeeded' : 'pending']
+        `INSERT INTO payments (id, booking_id, kind, amount_cents, status) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+        [`mock_payment_${i + 1}_dep`, bookingId, 'deposit', Math.floor(totalCents / 2), i % 3 === 1 || i % 3 === 0 ? 'succeeded' : 'pending']
       );
 
       // Insert balance payment
       await pool.execute(
-        `INSERT INTO payments (id, booking_id, kind, amount_cents, currency, status) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
-        [`mock_payment_${i + 1}_bal`, bookingId, 'balance', Math.floor(totalCents / 2), 'EUR', i % 3 === 1 ? 'succeeded' : 'pending']
+        `INSERT INTO payments (id, booking_id, kind, amount_cents, status) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING`,
+        [`mock_payment_${i + 1}_bal`, bookingId, 'balance', Math.floor(totalCents / 2), i % 3 === 1 ? 'succeeded' : 'pending']
       );
     }
 
@@ -103,10 +97,9 @@ export async function seedMockData() {
 export async function getMockUsers() {
   try {
     const [rows] = await pool.query(
-      `SELECT u.id, u.name, u.email, u.role, g.id as guest_id,
-        (SELECT COUNT(*) FROM bookings b WHERE b.guest_id = g.id) AS bookings_count
+      `SELECT u.id, u.name, u.email, u.role, u.id as user_id,
+        (SELECT COUNT(*) FROM bookings b WHERE b.user_id = u.id) AS bookings_count
        FROM "user" u
-       JOIN guests g ON g.user_id = u.id
        WHERE u.email LIKE '%@sanmateo.test'
        ORDER BY u.id ASC
        LIMIT 20`

@@ -25,7 +25,7 @@ type PropertyDetail = {
 
 type AmenityRow = { label: string; category: string | null; icon: string | null };
 type FeeRow = { name: string; calculation: string; amount_cents: number | null; percentage_bps: number | null };
-type ReviewRow = { rating_overall: number; public_comment: string | null; first_name: string | null; created_at: string };
+type ReviewRow = { rating_overall: number; public_comment: string | null; guest_name: string | null; created_at: string };
 
 function formatMoney(cents: number, currency = 'EUR') {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency, maximumFractionDigits: 0 }).format(cents / 100);
@@ -83,8 +83,8 @@ export default async function PropertyDetailPage({
   )) as [FeeRow[], unknown];
 
   const [reviewRows] = (await pool.query(
-    `SELECT r.rating_overall, r.public_comment, g.first_name, r.created_at
-     FROM reviews r JOIN guests g ON g.id = r.guest_id
+    `SELECT r.rating_overall, r.public_comment, u.name AS guest_name, r.created_at
+     FROM reviews r JOIN "user" u ON u.id = r.user_id
      WHERE r.property_id = ? AND r.status = 'published'
      ORDER BY r.created_at DESC LIMIT 6`,
     [property.id],
@@ -194,9 +194,9 @@ export default async function PropertyDetailPage({
                     <div key={i} className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-7 h-7 rounded-full bg-ocean/10 flex items-center justify-center text-[10px] font-bold text-ocean">
-                          {review.first_name?.[0] ?? '?'}
+                          {review.guest_name?.[0] ?? '?'}
                         </div>
-                        <span className="text-xs font-semibold text-slate-700">{review.first_name ?? 'Guest'}</span>
+                        <span className="text-xs font-semibold text-slate-700">{review.guest_name ?? 'Guest'}</span>
                         <span className="ml-auto text-xs font-mono text-ocean">{'★'.repeat(review.rating_overall)}</span>
                       </div>
                       <p className="text-sm text-slate-600 leading-6 italic">"{review.public_comment ?? 'No comment.'}"</p>

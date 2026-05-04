@@ -10,12 +10,10 @@ type BookingDetail = {
   check_in: string;
   check_out: string;
   nights: number;
-  num_adults: number;
-  num_children: number;
+  guests: { adults: number; children: number; infants: number; hasPets: boolean };
   total_cents: number;
   deposit_cents: number;
   balance_cents: number;
-  currency: string;
   property_name: string;
   property_slug: string;
   guest_name: string | null;
@@ -60,13 +58,13 @@ export default async function BookingConfirmationPage({
   const [rows] = (await pool.query(
     `SELECT
        b.id, b.reference, b.status, b.check_in, b.check_out, b.nights,
-       b.num_adults, b.num_children, b.total_cents, b.deposit_cents, b.balance_cents, b.currency,
+       b.guests, b.total_cents, b.deposit_cents, b.balance_cents,
        p.name AS property_name, p.slug AS property_slug,
-       CONCAT(g.first_name, ' ', g.last_name) AS guest_name, g.email AS guest_email,
+       u.name AS guest_name, u.email AS guest_email,
        v.payment_state, v.paid_cents
      FROM bookings b
      JOIN properties p ON p.id = b.property_id
-     JOIN guests g ON g.id = b.guest_id
+     JOIN "user" u ON u.id = b.user_id
      LEFT JOIN v_booking_payment_status v ON v.booking_id = b.id
      WHERE b.reference = ?
      LIMIT 1`,
@@ -161,7 +159,7 @@ export default async function BookingConfirmationPage({
               </div>
               <div className="text-sm font-bold text-slate-900">{booking.nights} nights</div>
               <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                {booking.num_adults + booking.num_children} guests
+                {booking.guests.adults + booking.guests.children} guests
               </div>
             </div>
             <div>
@@ -181,15 +179,15 @@ export default async function BookingConfirmationPage({
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-600">Total stay</span>
-              <span className="font-bold text-slate-900">{formatMoney(booking.total_cents, booking.currency)}</span>
+              <span className="font-bold text-slate-900">{formatMoney(booking.total_cents, 'EUR')}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-slate-600">Deposit (50%)</span>
-              <span className="font-bold text-slate-900">{formatMoney(booking.deposit_cents, booking.currency)}</span>
+              <span className="font-bold text-slate-900">{formatMoney(booking.deposit_cents, 'EUR')}</span>
             </div>
             <div className="flex justify-between items-center border-t border-slate-100 pt-3">
               <span className="text-sm text-slate-600">Balance due before check-in</span>
-              <span className="font-bold text-slate-900">{formatMoney(booking.balance_cents, booking.currency)}</span>
+              <span className="font-bold text-slate-900">{formatMoney(booking.balance_cents, 'EUR')}</span>
             </div>
           </div>
 
@@ -204,7 +202,7 @@ export default async function BookingConfirmationPage({
             </div>
             {booking.paid_cents != null && booking.paid_cents > 0 && (
               <div className="mt-2 text-sm text-slate-600">
-                {formatMoney(booking.paid_cents, booking.currency)} collected
+                {formatMoney(booking.paid_cents, 'EUR')} collected
               </div>
             )}
           </div>
@@ -217,7 +215,7 @@ export default async function BookingConfirmationPage({
             <ol className="space-y-4">
               {[
                 { step: '01', text: 'We review your request and confirm availability within 24 hours.' },
-                { step: '02', text: `Once confirmed, the deposit of ${formatMoney(booking.deposit_cents, booking.currency)} is due to secure your dates.` },
+                { step: '02', text: `Once confirmed, the deposit of ${formatMoney(booking.deposit_cents, 'EUR')} is due to secure your dates.` },
                 { step: '03', text: 'The remaining balance is due 14 days before check-in.' },
               ].map(({ step, text }) => (
                 <li key={step} className="flex items-start gap-4">

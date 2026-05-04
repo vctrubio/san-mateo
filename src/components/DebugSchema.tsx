@@ -19,22 +19,10 @@ type TableCard = {
 
 const tables: TableCard[] = [
   {
-    name: 'fincas',
-    purpose: 'Physical estate, contact details, and local arrival rules.',
-    fields: [
-      { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'slug', type: 'VARCHAR', note: 'public route key' },
-      { name: 'name', type: 'VARCHAR' },
-      { name: 'city', type: 'VARCHAR' },
-      { name: 'timezone', type: 'VARCHAR' },
-    ],
-  },
-  {
     name: 'properties',
-    purpose: 'Rentable units inside the finca, including map coordinates.',
+    purpose: 'Rentable units inside the estate, including map coordinates.',
     fields: [
       { name: 'id', type: 'VARCHAR', primary: true },
-      { name: 'finca_id', type: 'VARCHAR', foreign: 'fincas.id' },
       { name: 'slug', type: 'VARCHAR', note: 'public route key' },
       { name: 'property_type', type: 'VARCHAR' },
       { name: 'base_price_cents', type: 'INT' },
@@ -58,7 +46,7 @@ const tables: TableCard[] = [
       { name: 'id', type: 'VARCHAR', primary: true },
       { name: 'reference', type: 'VARCHAR', note: 'public booking code' },
       { name: 'property_id', type: 'VARCHAR', foreign: 'properties.id' },
-      { name: 'guest_id', type: 'VARCHAR', foreign: 'guests.id' },
+      { name: 'user_id', type: 'VARCHAR', foreign: '"user".id' },
       { name: 'check_in / check_out', type: 'DATE' },
       { name: 'status', type: 'VARCHAR' },
       { name: 'total_cents', type: 'INT' },
@@ -76,13 +64,13 @@ const tables: TableCard[] = [
     ],
   },
   {
-    name: 'guests',
-    purpose: 'Booking counterparties. They are not Better Auth users.',
+    name: '"user"',
+    purpose: 'Better Auth user.',
     fields: [
       { name: 'id', type: 'VARCHAR', primary: true },
+      { name: 'name', type: 'VARCHAR' },
       { name: 'email', type: 'VARCHAR' },
-      { name: 'stripe_customer_id', type: 'VARCHAR' },
-      { name: 'user_id', type: 'VARCHAR' },
+      { name: 'role', type: 'VARCHAR' },
     ],
   },
   {

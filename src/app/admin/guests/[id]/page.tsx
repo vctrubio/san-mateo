@@ -47,7 +47,7 @@ export default async function AdminGuestDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-4">Guest profile</p>
-            <h1 className="text-4xl font-bold tracking-tighter text-slate-900 mb-2">{guest.first_name} {guest.last_name}</h1>
+            <h1 className="text-4xl font-bold tracking-tighter text-slate-900 mb-2">{guest.full_name}</h1>
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <Mail className="h-3.5 w-3.5" />
               {guest.email}
@@ -94,25 +94,6 @@ export default async function AdminGuestDetailPage({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">Notes</p>
-            <form action={updateGuestNotes} className="mt-4 space-y-4">
-              <input type="hidden" name="guestId" value={guest.guest_id} />
-              <textarea
-                name="notes"
-                defaultValue={guest.notes ?? ''}
-                placeholder="Add internal notes about this guest"
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none focus:border-ocean"
-                rows={4}
-              />
-              <button
-                type="submit"
-                className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white transition-colors hover:bg-ocean"
-              >
-                Save notes
-              </button>
-            </form>
-          </div>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">Reviews</p>
             <div className="mt-4 space-y-3 text-sm text-slate-600">

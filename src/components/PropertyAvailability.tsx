@@ -101,11 +101,7 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
   const handleBooking = async () => {
     if (!selectedProperty || !dates.start || !dates.end || isAvailable === false) return;
     
-    if (!session?.user && (!guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim())) return;
-
-    const finalFirstName = session?.user ? session.user.name.split(' ')[0] : guestFirstName;
-    const finalLastName = session?.user ? session.user.name.split(' ').slice(1).join(' ') || 'Guest' : guestLastName;
-    const finalEmail = session?.user ? session.user.email : guestEmail;
+    if (!session?.user) return;
 
     setIsBooking(true);
     const res = await createInitialBooking(
@@ -115,9 +111,7 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
         endDate: dates.end,
         ...config,
       },
-      finalFirstName,
-      finalLastName,
-      finalEmail,
+      session.user.id
     );
     setIsBooking(false);
 

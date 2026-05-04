@@ -43,14 +43,14 @@ export default async function AdminGuestsPage() {
       <section className="grid gap-4">
         {guests.map((guest) => (
           <Link
-            key={guest.guest_id}
-            href={`/admin/guests/${guest.guest_id}`}
+            key={guest.user_id}
+            href={`/admin/guests/${guest.user_id}`}
             className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-ocean/40 hover:shadow-md"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-slate-400">Guest</p>
-                <h2 className="text-xl font-bold text-slate-900">{guest.first_name} {guest.last_name}</h2>
+                <h2 className="text-xl font-bold text-slate-900">{guest.full_name}</h2>
                 <div className="mt-1 flex items-center gap-2 text-sm text-slate-500">
                   <Mail className="h-3.5 w-3.5" />
                   {guest.email}
