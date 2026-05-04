@@ -89,7 +89,7 @@ export default async function DebugDatabasePanel() {
     const [fincaRows] = (await pool.query('SELECT * FROM fincas LIMIT 1')) as [FincaRow[], unknown];
     const [propertyRows] = (await pool.query(
       `SELECT p.*, ph.storage_key AS cover_photo_key,
-        COALESCE(ps.is_occupied_today, 0) AS is_occupied_today,
+        COALESCE(ps.is_occupied_today::int, 0) AS is_occupied_today,
         ps.next_booking_date,
         COALESCE(bs.booking_count, 0) AS booking_count
       FROM properties p
@@ -127,7 +127,7 @@ export default async function DebugDatabasePanel() {
         (SELECT COUNT(*) FROM reviews WHERE status = 'published') AS review_count,
         (SELECT COALESCE(SUM(total_cents), 0) FROM bookings WHERE status IN ('confirmed', 'checked_in', 'checked_out', 'completed')) AS revenue_cents,
         (SELECT COALESCE(SUM(amount_cents), 0) FROM payments WHERE status = 'succeeded') AS collected_cents,
-        (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = 1) AS occupied_today_count`
+        (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = TRUE) AS occupied_today_count`
     )) as [StatsRow[], unknown];
 
     finca = fincaRows[0];

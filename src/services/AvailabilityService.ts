@@ -22,7 +22,10 @@ export class AvailabilityService {
         [propertyId, end, start]
       );
 
-      return rows[0].conflict_count === 0;
+      console.log(`DEV:DEBUG | isAvailable | property: ${propertyId}, start: ${start}, end: ${end}`);
+      console.log(`DEV:DEBUG | isAvailable | conflict_count value: ${rows[0].conflict_count}, type: ${typeof rows[0].conflict_count}`);
+
+      return Number(rows[0].conflict_count) === 0;
     } finally {
       await conn.end();
     }

@@ -90,7 +90,7 @@ export async function getAdminDashboardStats(): Promise<DashboardStats> {
         (SELECT COALESCE(SUM(total_cents),0) FROM bookings WHERE status IN ('confirmed','checked_in','checked_out','completed')) AS revenue_total_cents,
         (SELECT COALESCE(SUM(amount_cents),0) FROM payments WHERE status = 'succeeded') AS revenue_collected_cents,
         (SELECT COUNT(*) FROM guests) AS guests_total,
-        (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = 1) AS occupied_today`
+        (SELECT COUNT(*) FROM v_property_status_today WHERE is_occupied_today = TRUE) AS occupied_today`
     )) as [DashboardStats[], unknown];
     return rows[0];
   } finally {
@@ -140,8 +140,8 @@ export async function getAnalyticsStats(): Promise<AnalyticsStats> {
       `SELECT
         p.name, p.slug,
         COALESCE(COUNT(b.id), 0) AS nights_booked,
-        DATEDIFF(NOW(), p.created_at) AS total_nights_available,
-        ROUND(COALESCE(COUNT(b.id),0) * 100.0 / GREATEST(DATEDIFF(NOW(), p.created_at),1), 1) AS occupancy_pct
+        (CURRENT_DATE - p.created_at::date) AS total_nights_available,
+        ROUND(COALESCE(COUNT(b.id),0) * 100.0 / GREATEST((CURRENT_DATE - p.created_at::date),1), 1) AS occupancy_pct
       FROM properties p
       LEFT JOIN bookings b ON b.property_id = p.id
         AND b.status IN ('confirmed','checked_in','checked_out','completed')
@@ -152,7 +152,7 @@ export async function getAnalyticsStats(): Promise<AnalyticsStats> {
 
     const [monthRows] = (await conn.query(
       `SELECT
-        DATE_FORMAT(check_in, '%Y-%m') AS month,
+        TO_CHAR(check_in, 'YYYY-MM') AS month,
         COUNT(*) AS bookings,
         SUM(total_cents) AS revenue_cents
       FROM bookings

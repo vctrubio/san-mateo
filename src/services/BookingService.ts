@@ -26,7 +26,9 @@ export class BookingService {
     const conn = await getConnection();
 
     // Atomic check and block
+    console.log(`DEV:DEBUG | createBooking | Checking availability for property: ${config.propertyId}`);
     const isAvailable = await this.checkAvailability(config.propertyId, config.startDate, config.endDate);
+    console.log(`DEV:DEBUG | createBooking | isAvailable returned: ${isAvailable}`);
     if (!isAvailable) throw new Error('Selected dates are no longer available.');
 
     // 1. Get property details
@@ -37,7 +39,9 @@ export class BookingService {
     const property = propertyRows[0];
 
     // 2. Calculate Pricing Engine
-    const nights = Math.ceil((config.endDate.getTime() - config.startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const parsedStartDate = new Date(config.startDate);
+    const parsedEndDate = new Date(config.endDate);
+    const nights = Math.ceil((parsedEndDate.getTime() - parsedStartDate.getTime()) / (1000 * 60 * 60 * 24));
     const baseTotal = property.base_price_cents * nights;
     
     // Add surcharges (Example: 50€ cleaning fee, 20€ per pet)
@@ -66,8 +70,8 @@ export class BookingService {
         reference,
         config.propertyId,
         guestId,
-        config.startDate.toISOString().split('T')[0],
-        config.endDate.toISOString().split('T')[0],
+        parsedStartDate.toISOString().split('T')[0],
+        parsedEndDate.toISOString().split('T')[0],
         nights,
         config.adults,
         config.children,

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isWithinInterval, startOfDay, addDays, isBefore, differenceInDays } from 'date-fns';
 import { checkPropertyAvailability, getAllProperties, createInitialBooking, getBusyDates } from '@/app/actions/booking';
 import { useRouter } from 'next/navigation';
+import { authClient } from '@/lib/auth-client';
 
 export default function PropertyAvailability({ preselectedSlug }: { preselectedSlug?: string } = {}) {
   const router = useRouter();
@@ -22,7 +23,18 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
   const [guestFirstName, setGuestFirstName] = useState('');
   const [guestLastName, setGuestLastName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
+  
+  // Inline Auth State
+  const [authMode, setAuthMode] = useState<'sign-in' | 'sign-up'>('sign-in');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  const { data: session } = authClient.useSession();
 
   const [config, setConfig] = useState({
     adults: 2, children: 0, babies: 0, needsCrib: false, hasPets: false, dogs: 0, cats: 0
@@ -88,7 +100,12 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
 
   const handleBooking = async () => {
     if (!selectedProperty || !dates.start || !dates.end || isAvailable === false) return;
-    if (!guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim()) return;
+    
+    if (!session?.user && (!guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim())) return;
+
+    const finalFirstName = session?.user ? session.user.name.split(' ')[0] : guestFirstName;
+    const finalLastName = session?.user ? session.user.name.split(' ').slice(1).join(' ') || 'Guest' : guestLastName;
+    const finalEmail = session?.user ? session.user.email : guestEmail;
 
     setIsBooking(true);
     const res = await createInitialBooking(
@@ -98,9 +115,9 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
         endDate: dates.end,
         ...config,
       },
-      guestFirstName,
-      guestLastName,
-      guestEmail,
+      finalFirstName,
+      finalLastName,
+      finalEmail,
     );
     setIsBooking(false);
 
@@ -108,6 +125,30 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
       router.push(`/user?bookingSuccess=true&reference=${(res as any).reference}`);
     } else {
       alert(`Error: ${(res as any).error}`);
+    }
+  };
+
+  const handleInlineAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authEmail || !authPassword) return;
+    if (authMode === 'sign-up' && !authName) return;
+
+    setAuthLoading(true);
+    setAuthError(null);
+
+    let res;
+    if (authMode === 'sign-in') {
+      res = await authClient.signIn.email({ email: authEmail, password: authPassword });
+    } else {
+      res = await authClient.signUp.email({ email: authEmail, password: authPassword, name: authName });
+    }
+
+    if (res.error) {
+      setAuthError(res.error.message || 'Authentication failed');
+      setAuthLoading(false);
+    } else {
+      // Success, session will be updated automatically by useSession hook
+      setAuthLoading(false);
     }
   };
 
@@ -299,46 +340,57 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
                 </button>
 
                 <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-ocean mb-2">Guest check-in</p>
-                <h3 className="text-2xl font-bold text-slate-900 tracking-tighter mb-1">
-                  Confirmation Details
-                </h3>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="text-2xl font-bold text-slate-900 tracking-tighter">
+                    Confirmation Details
+                  </h3>
+                </div>
                 <p className="text-xs text-slate-500 mb-6">
                   {selectedProperty?.name} · {dates.start && dates.end ? `${differenceInDays(dates.end, dates.start)} nights` : ''}
                 </p>
 
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">First name</label>
-                      <input
-                        type="text"
-                        value={guestFirstName}
-                        onChange={e => setGuestFirstName(e.target.value)}
-                        placeholder="María"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                      />
+                  {session?.user ? (
+                    <div className="bg-ocean/5 border border-ocean/10 rounded-xl p-4 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-ocean text-white flex items-center justify-center font-bold uppercase shrink-0 text-lg">
+                        {session.user.name.charAt(0)}
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-mono text-ocean uppercase tracking-widest mb-0.5">Booking as</div>
+                        <div className="text-sm font-bold text-slate-900 leading-tight">{session.user.name}</div>
+                        <div className="text-xs text-slate-500">{session.user.email}</div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Last name</label>
-                      <input
-                        type="text"
-                        value={guestLastName}
-                        onChange={e => setGuestLastName(e.target.value)}
-                        placeholder="García"
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                      />
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                        <button type="button" onClick={() => setAuthMode('sign-in')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-lg transition-colors ${authMode === 'sign-in' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}>Sign In</button>
+                        <button type="button" onClick={() => setAuthMode('sign-up')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-lg transition-colors ${authMode === 'sign-up' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}>Register</button>
+                      </div>
+
+                      <div className="space-y-3">
+                        {authMode === 'sign-up' && (
+                          <div>
+                            <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Full Name</label>
+                            <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} placeholder="María García" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                          </div>
+                        )}
+                        <div>
+                          <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Email</label>
+                          <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="maria@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Password</label>
+                          <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                        </div>
+                        {authError && <div className="text-xs text-rose-500 font-medium bg-rose-50 p-2 rounded-lg border border-rose-100">{authError}</div>}
+                        <button type="button" onClick={handleInlineAuth} disabled={authLoading || !authEmail || !authPassword || (authMode === 'sign-up' && !authName)} className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-ocean transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                          {authLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                          {authLoading ? 'Processing…' : authMode === 'sign-in' ? 'Sign In' : 'Create Account'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Email address</label>
-                    <input
-                      type="email"
-                      value={guestEmail}
-                      onChange={e => setGuestEmail(e.target.value)}
-                      placeholder="maria@example.com"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                    />
-                  </div>
+                  )}
 
                   <div className="bg-slate-50 rounded-xl p-4 text-xs space-y-1">
                     <div className="flex justify-between text-slate-600">
@@ -351,15 +403,17 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleBooking}
-                    disabled={isBooking || !guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim()}
-                    className="w-full py-3.5 bg-ocean text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
-                  >
-                    {isBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                    {isBooking ? 'Processing…' : 'Confirm reservation'}
-                  </button>
+                  {!session?.user ? null : (
+                    <button
+                      type="button"
+                      onClick={handleBooking}
+                      disabled={isBooking || !session?.user}
+                      className="w-full mt-4 py-3.5 bg-ocean text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
+                    >
+                      {isBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      {isBooking ? 'Processing…' : 'Confirm reservation'}
+                    </button>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -574,38 +628,47 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
               </p>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">First name</label>
-                    <input
-                      type="text"
-                      value={guestFirstName}
-                      onChange={e => setGuestFirstName(e.target.value)}
-                      placeholder="María"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                    />
+                {session?.user ? (
+                  <div className="bg-ocean/5 border border-ocean/10 rounded-xl p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-ocean text-white flex items-center justify-center font-bold uppercase shrink-0 text-lg">
+                      {session.user.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-mono text-ocean uppercase tracking-widest mb-0.5">Booking as</div>
+                      <div className="text-sm font-bold text-slate-900 leading-tight">{session.user.name}</div>
+                      <div className="text-xs text-slate-500">{session.user.email}</div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Last name</label>
-                    <input
-                      type="text"
-                      value={guestLastName}
-                      onChange={e => setGuestLastName(e.target.value)}
-                      placeholder="García"
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                    />
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                      <button type="button" onClick={() => setAuthMode('sign-in')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-lg transition-colors ${authMode === 'sign-in' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}>Sign In</button>
+                      <button type="button" onClick={() => setAuthMode('sign-up')} className={`flex-1 text-[10px] font-bold uppercase tracking-widest py-2 rounded-lg transition-colors ${authMode === 'sign-up' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}>Register</button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {authMode === 'sign-up' && (
+                        <div>
+                          <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Full Name</label>
+                          <input type="text" value={authName} onChange={e => setAuthName(e.target.value)} placeholder="María García" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Email</label>
+                        <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="maria@example.com" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Password</label>
+                        <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="••••••••" className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean" />
+                      </div>
+                      {authError && <div className="text-xs text-rose-500 font-medium bg-rose-50 p-2 rounded-lg border border-rose-100">{authError}</div>}
+                      <button type="button" onClick={handleInlineAuth} disabled={authLoading || !authEmail || !authPassword || (authMode === 'sign-up' && !authName)} className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:bg-ocean transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                        {authLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        {authLoading ? 'Processing…' : authMode === 'sign-in' ? 'Sign In' : 'Create Account'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-[9px] font-mono uppercase tracking-[0.2em] text-slate-400 mb-1">Email address</label>
-                  <input
-                    type="email"
-                    value={guestEmail}
-                    onChange={e => setGuestEmail(e.target.value)}
-                    placeholder="maria@example.com"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-ocean"
-                  />
-                </div>
+                )}
 
                 <div className="bg-slate-50 rounded-xl p-4 text-xs space-y-1">
                   <div className="flex justify-between text-slate-600">
@@ -618,15 +681,17 @@ export default function PropertyAvailability({ preselectedSlug }: { preselectedS
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleBooking}
-                  disabled={isBooking || !guestFirstName.trim() || !guestLastName.trim() || !guestEmail.trim()}
-                  className="w-full py-3.5 bg-ocean text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
-                >
-                  {isBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                  {isBooking ? 'Processing…' : 'Confirm reservation'}
-                </button>
+                {!session?.user ? null : (
+                  <button
+                    type="button"
+                    onClick={handleBooking}
+                    disabled={isBooking || !session?.user}
+                    className="w-full mt-4 py-3.5 bg-ocean text-white rounded-xl font-bold text-xs uppercase tracking-[0.2em] hover:shadow-xl hover:shadow-ocean/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-y-0 disabled:shadow-none flex items-center justify-center gap-2"
+                  >
+                    {isBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                    {isBooking ? 'Processing…' : 'Confirm reservation'}
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>

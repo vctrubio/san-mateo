@@ -69,7 +69,7 @@ export async function createInitialBooking(
 export async function getAllProperties() {
   try {
     const conn = await getConnection();
-    const [rows]: any = await conn.query('SELECT id, name, slug, max_guests, base_price_cents FROM properties WHERE status = "active"');
+    const [rows]: any = await conn.query("SELECT id, name, slug, max_guests, base_price_cents FROM properties WHERE status = 'active'");
     await conn.end();
     return rows as any[];
   } catch (error) {

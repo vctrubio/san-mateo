@@ -1,94 +1,87 @@
-CREATE DATABASE IF NOT EXISTS san_mateo;
-USE san_mateo;
+DROP VIEW IF EXISTS v_guest_summary CASCADE;
+DROP VIEW IF EXISTS v_property_status_today CASCADE;
+DROP VIEW IF EXISTS v_booking_payment_status CASCADE;
 
-SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS "verification" CASCADE;
+DROP TABLE IF EXISTS "account" CASCADE;
+DROP TABLE IF EXISTS "session" CASCADE;
+DROP TABLE IF EXISTS "user" CASCADE;
 
-DROP TABLE IF EXISTS `verification`;
-DROP TABLE IF EXISTS `account`;
-DROP TABLE IF EXISTS `session`;
-DROP TABLE IF EXISTS `user`;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS booking_events CASCADE;
+DROP TABLE IF EXISTS stripe_webhook_events CASCADE;
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS booking_fees CASCADE;
+DROP TABLE IF EXISTS bookings CASCADE;
+DROP TABLE IF EXISTS guests CASCADE;
+DROP TABLE IF EXISTS property_fees CASCADE;
+DROP TABLE IF EXISTS fee_types CASCADE;
+DROP TABLE IF EXISTS property_amenities CASCADE;
+DROP TABLE IF EXISTS amenities CASCADE;
+DROP TABLE IF EXISTS property_photos CASCADE;
+DROP TABLE IF EXISTS properties CASCADE;
+DROP TABLE IF EXISTS fincas CASCADE;
 
-DROP VIEW IF EXISTS v_guest_summary;
-DROP VIEW IF EXISTS v_property_status_today;
-DROP VIEW IF EXISTS v_booking_payment_status;
-
-DROP TABLE IF EXISTS reviews;
-DROP TABLE IF EXISTS booking_events;
-DROP TABLE IF EXISTS stripe_webhook_events;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS booking_fees;
-DROP TABLE IF EXISTS bookings;
-DROP TABLE IF EXISTS guests;
-DROP TABLE IF EXISTS property_fees;
-DROP TABLE IF EXISTS fee_types;
-DROP TABLE IF EXISTS property_amenities;
-DROP TABLE IF EXISTS amenities;
-DROP TABLE IF EXISTS property_photos;
-DROP TABLE IF EXISTS properties;
-DROP TABLE IF EXISTS fincas;
-
-SET FOREIGN_KEY_CHECKS = 1;
-
-CREATE TABLE `user` (
+CREATE TABLE "user" (
     id              VARCHAR(36) PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,
     email           VARCHAR(255) NOT NULL UNIQUE,
-    emailVerified   BOOLEAN NOT NULL DEFAULT FALSE,
+    "emailVerified"   BOOLEAN NOT NULL DEFAULT FALSE,
     image           TEXT,
     role            VARCHAR(32) NOT NULL DEFAULT 'user',
     banned          BOOLEAN NOT NULL DEFAULT FALSE,
-    banReason       TEXT,
-    banExpires      DATETIME NULL,
-    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    "banReason"       TEXT,
+    "banExpires"      TIMESTAMP NULL,
+    "createdAt"       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_user_role ON `user`(role);
+CREATE INDEX idx_user_role ON "user"(role);
 
-CREATE TABLE `session` (
+CREATE TABLE "session" (
     id              VARCHAR(36) PRIMARY KEY,
-    expiresAt       DATETIME NOT NULL,
+    "expiresAt"       TIMESTAMP NOT NULL,
     token           VARCHAR(255) NOT NULL UNIQUE,
-    createdAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    ipAddress       TEXT,
-    userAgent       TEXT,
-    userId          VARCHAR(36) NOT NULL,
-    impersonatedBy  VARCHAR(36),
-    FOREIGN KEY (userId) REFERENCES `user`(id) ON DELETE CASCADE
+    "createdAt"       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "ipAddress"       TEXT,
+    "userAgent"       TEXT,
+    "userId"          VARCHAR(36) NOT NULL,
+    "impersonatedBy"  VARCHAR(36),
+    FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_session_userId ON `session`(userId);
+CREATE INDEX idx_session_userId ON "session"("userId");
 
-CREATE TABLE `account` (
+CREATE TABLE "account" (
     id                      VARCHAR(36) PRIMARY KEY,
-    accountId               VARCHAR(255) NOT NULL,
-    providerId              VARCHAR(255) NOT NULL,
-    userId                  VARCHAR(36) NOT NULL,
-    accessToken             TEXT,
-    refreshToken            TEXT,
-    idToken                 TEXT,
-    accessTokenExpiresAt    DATETIME NULL,
-    refreshTokenExpiresAt   DATETIME NULL,
+    "accountId"               VARCHAR(255) NOT NULL,
+    "providerId"              VARCHAR(255) NOT NULL,
+    "userId"                  VARCHAR(36) NOT NULL,
+    "accessToken"             TEXT,
+    "refreshToken"            TEXT,
+    "idToken"                 TEXT,
+    "accessTokenExpiresAt"    TIMESTAMP NULL,
+    "refreshTokenExpiresAt"   TIMESTAMP NULL,
     scope                   TEXT,
     password                TEXT,
-    createdAt               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES `user`(id) ON DELETE CASCADE
+    "createdAt"               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("userId") REFERENCES "user"(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_account_userId ON `account`(userId);
+CREATE INDEX idx_account_userId ON "account"("userId");
 
-CREATE TABLE `verification` (
+CREATE TABLE "verification" (
     id          VARCHAR(36) PRIMARY KEY,
     identifier  VARCHAR(255) NOT NULL,
     value       TEXT NOT NULL,
-    expiresAt   DATETIME NOT NULL,
-    createdAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updatedAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    "expiresAt"   TIMESTAMP NOT NULL,
+    "createdAt"   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_verification_identifier ON `verification`(identifier);
+CREATE INDEX idx_verification_identifier ON "verification"(identifier);
 
 CREATE TABLE fincas (
     id                VARCHAR(36) PRIMARY KEY,
@@ -110,9 +103,9 @@ CREATE TABLE fincas (
     website_url       VARCHAR(255),
     check_in_time     TIME NOT NULL DEFAULT '15:00:00',
     check_out_time    TIME NOT NULL DEFAULT '11:00:00',
-    created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at        DATETIME NULL
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at        TIMESTAMP NULL
 );
 
 CREATE TABLE properties (
@@ -135,9 +128,9 @@ CREATE TABLE properties (
     min_nights         INT NOT NULL DEFAULT 1,
     deposit_percentage INT NOT NULL DEFAULT 50,
     balance_due_days_before_checkin INT NOT NULL DEFAULT 14,
-    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at         DATETIME NULL,
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at         TIMESTAMP NULL,
     FOREIGN KEY (finca_id) REFERENCES fincas(id) ON DELETE RESTRICT
 );
 
@@ -152,13 +145,13 @@ CREATE TABLE property_photos (
     width_px     INT,
     height_px    INT,
     blurhash     VARCHAR(255),
-    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 );
 
 CREATE TABLE amenities (
     id       VARCHAR(36) PRIMARY KEY,
-    `key`    VARCHAR(255) UNIQUE NOT NULL,
+    "key"    VARCHAR(255) UNIQUE NOT NULL,
     label    VARCHAR(255) NOT NULL,
     category VARCHAR(255),
     icon     VARCHAR(255)
@@ -174,7 +167,7 @@ CREATE TABLE property_amenities (
 
 CREATE TABLE fee_types (
     id       VARCHAR(36) PRIMARY KEY,
-    `key`    VARCHAR(255) UNIQUE NOT NULL,
+    "key"    VARCHAR(255) UNIQUE NOT NULL,
     label    VARCHAR(255) NOT NULL,
     taxable  BOOLEAN NOT NULL DEFAULT TRUE
 );
@@ -191,8 +184,8 @@ CREATE TABLE property_fees (
     is_optional     BOOLEAN NOT NULL DEFAULT FALSE,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     position        INT NOT NULL DEFAULT 0,
-    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE,
     FOREIGN KEY (fee_type_id) REFERENCES fee_types(id),
     CHECK (
@@ -212,8 +205,8 @@ CREATE TABLE guests (
     stripe_customer_id VARCHAR(255) UNIQUE,
     notes              TEXT,
     user_id            VARCHAR(255) UNIQUE,
-    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE bookings (
@@ -241,17 +234,17 @@ CREATE TABLE bookings (
     deposit_percentage             INT NOT NULL DEFAULT 50,
     deposit_cents                  INT NOT NULL,
     balance_cents                  INT NOT NULL,
-    balance_due_at                 DATETIME,
+    balance_due_at                 TIMESTAMP,
 
     status                         VARCHAR(50) NOT NULL DEFAULT 'pending',
     source                         VARCHAR(50) NOT NULL DEFAULT 'direct',
     guest_message                  TEXT,
     admin_notes                    TEXT,
-    cancelled_at                   DATETIME,
+    cancelled_at                   TIMESTAMP,
     cancellation_reason            TEXT,
-    confirmed_at                   DATETIME,
-    created_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at                     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    confirmed_at                   TIMESTAMP,
+    created_at                     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at                     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE RESTRICT,
@@ -272,7 +265,7 @@ CREATE TABLE booking_fees (
     currency          CHAR(3) NOT NULL,
     is_optional       BOOLEAN NOT NULL DEFAULT FALSE,
     is_admin_override BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
     FOREIGN KEY (property_fee_id) REFERENCES property_fees(id) ON DELETE SET NULL
 );
@@ -284,14 +277,14 @@ CREATE TABLE payments (
     amount_cents             INT NOT NULL,
     currency                 CHAR(3) NOT NULL,
     status                   VARCHAR(50) NOT NULL DEFAULT 'pending',
-    due_at                   DATETIME,
-    paid_at                  DATETIME,
+    due_at                   TIMESTAMP,
+    paid_at                  TIMESTAMP,
     stripe_payment_intent_id VARCHAR(255) UNIQUE,
     stripe_charge_id         VARCHAR(255),
     stripe_payment_method    VARCHAR(255),
     stripe_last_error        TEXT,
-    created_at               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at               DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT
 );
 
@@ -302,7 +295,7 @@ CREATE TABLE booking_events (
     payload    JSON NOT NULL,
     actor_type VARCHAR(50),
     actor_id   VARCHAR(255),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
@@ -319,11 +312,11 @@ CREATE TABLE reviews (
     public_comment      TEXT,
     private_feedback    TEXT,
     host_reply          TEXT,
-    host_replied_at     DATETIME,
+    host_replied_at     TIMESTAMP,
     host_replied_by     VARCHAR(255),
     status              VARCHAR(50) NOT NULL DEFAULT 'pending',
-    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
     FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE RESTRICT,
@@ -334,9 +327,9 @@ CREATE TABLE stripe_webhook_events (
     id           VARCHAR(255) PRIMARY KEY,
     type         VARCHAR(255) NOT NULL,
     payload      JSON NOT NULL,
-    processed_at DATETIME,
+    processed_at TIMESTAMP,
     error        TEXT,
-    received_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    received_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_properties_finca ON properties(finca_id);
@@ -353,7 +346,7 @@ CREATE INDEX idx_booking_events_booking ON booking_events(booking_id, created_at
 CREATE INDEX idx_reviews_property_published ON reviews(property_id, status);
 CREATE INDEX idx_reviews_guest ON reviews(guest_id);
 
-CREATE VIEW v_booking_payment_status AS
+CREATE OR REPLACE VIEW v_booking_payment_status AS
 SELECT
     b.id AS booking_id,
     b.total_cents,
@@ -368,7 +361,7 @@ FROM bookings b
 LEFT JOIN payments p ON p.booking_id = b.id AND p.status = 'succeeded'
 GROUP BY b.id, b.total_cents;
 
-CREATE VIEW v_property_status_today AS
+CREATE OR REPLACE VIEW v_property_status_today AS
 SELECT
     p.id AS property_id,
     p.slug,
@@ -379,7 +372,7 @@ SELECT
         FROM bookings b
         WHERE b.property_id = p.id
           AND b.status IN ('confirmed', 'checked_in')
-          AND CURRENT_DATE BETWEEN b.check_in AND DATE_SUB(b.check_out, INTERVAL 1 DAY)
+          AND CURRENT_DATE BETWEEN b.check_in AND (b.check_out - INTERVAL '1 day')
     ) AS is_occupied_today,
     (
         SELECT MIN(b.check_in)
@@ -391,7 +384,7 @@ SELECT
 FROM properties p
 WHERE p.deleted_at IS NULL;
 
-CREATE VIEW v_guest_summary AS
+CREATE OR REPLACE VIEW v_guest_summary AS
 SELECT
     g.id AS guest_id,
     g.email,

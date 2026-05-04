@@ -41,7 +41,7 @@ export async function getAdminProperties() {
         p.base_price_cents,
         p.min_nights,
         COALESCE(bs.booking_count, 0) AS booking_count,
-        COALESCE(ps.is_occupied_today, 0) AS is_occupied_today,
+        COALESCE(ps.is_occupied_today::int, 0) AS is_occupied_today,
         ps.next_booking_date,
         ph.storage_key AS cover_photo_key
       FROM properties p
@@ -79,7 +79,7 @@ export async function getAdminPropertyBySlug(slug: string): Promise<AdminPropert
         p.base_price_cents,
         p.min_nights,
         COALESCE(bs.booking_count, 0) AS booking_count,
-        COALESCE(ps.is_occupied_today, 0) AS is_occupied_today,
+        COALESCE(ps.is_occupied_today::int, 0) AS is_occupied_today,
         ps.next_booking_date,
         ph.storage_key AS cover_photo_key
       FROM properties p

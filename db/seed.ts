@@ -357,13 +357,13 @@ async function main() {
     }
 
     await conn.execute(
-      `INSERT INTO \`user\` (
-        id, name, email, emailVerified, role, banned
+      `INSERT INTO "user" (
+        id, name, email, "emailVerified", role, banned
       ) VALUES (?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        name = VALUES(name),
-        role = VALUES(role),
-        banned = VALUES(banned)`,
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        role = EXCLUDED.role,
+        banned = EXCLUDED.banned`,
       [
         "user_admin_seed",
         "San Mateo Admin",
@@ -375,16 +375,49 @@ async function main() {
     );
 
     await conn.execute(
-      `INSERT INTO \`account\` (
-        id, accountId, providerId, userId, password
+      `INSERT INTO "account" (
+        id, "accountId", "providerId", "userId", password
       ) VALUES (?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE
-        password = VALUES(password)`,
+      ON CONFLICT (id) DO UPDATE SET
+        password = EXCLUDED.password`,
       [
         "account_admin_seed",
         "admin@sanmateo.test",
         "credential",
         "user_admin_seed",
+        "2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67",
+      ]
+    );
+
+    await conn.execute(
+      `INSERT INTO "user" (
+        id, name, email, "emailVerified", role, banned
+      ) VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        role = EXCLUDED.role,
+        banned = EXCLUDED.banned`,
+      [
+        "user_guest_seed",
+        "Test Guest",
+        "guest@sanmateo.test",
+        true,
+        "user",
+        false,
+      ]
+    );
+
+    await conn.execute(
+      `INSERT INTO "account" (
+        id, "accountId", "providerId", "userId", password
+      ) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT (id) DO UPDATE SET
+        password = EXCLUDED.password`,
+      [
+        "account_guest_seed",
+        "guest@sanmateo.test",
+        "credential",
+        "user_guest_seed",
         "2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67",
       ]
     );
