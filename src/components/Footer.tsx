@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { Share2 } from 'lucide-react';
+import fincaData from '../../finca.json';
 
 export default function Footer() {
-  const airbnbUrl = "https://www.airbnb.es/users/profile/1467030082869236380?previous_page_name=PdpHomeMarketplace";
+  const airbnbUrl = fincaData.contact.airbnb;
 
   const [shareUrl, setShareUrl] = React.useState("");
   const [wind, setWind] = React.useState({ speed: 18, deg: 270 });
@@ -24,8 +25,8 @@ export default function Footer() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: 'Finca San Mateo',
-        text: 'Discover this coastal sanctuary in Tarifa.',
+        title: fincaData.name,
+        text: `Discover this coastal sanctuary in ${fincaData.subtitle}.`,
         url: window.location.href,
       }).catch(console.error);
     } else {
@@ -40,8 +41,8 @@ export default function Footer() {
         
         {/* Left: Brand */}
         <div className="flex flex-col items-center md:items-start">
-          <span className="text-xs font-bold text-slate-900 uppercase tracking-[0.3em]">San Mateo</span>
-          <span className="text-[10px] font-mono text-slate-300 uppercase mt-1 tracking-widest">Est. 1984</span>
+          <span className="text-xs font-bold text-slate-900 uppercase tracking-[0.3em]">{fincaData.name}</span>
+          <span className="text-[10px] font-mono text-slate-300 uppercase mt-1 tracking-widest">Est. {fincaData.est}</span>
         </div>
 
         {/* Center: The Two Essentials */}
@@ -67,7 +68,7 @@ export default function Footer() {
           </button>
 
           <a 
-            href={`https://wa.me/?text=${encodeURIComponent("Check out Finca San Mateo in Tarifa: " + shareUrl)}`}
+            href={`https://wa.me/?text=${encodeURIComponent(`Check out ${fincaData.name} in ${fincaData.subtitle}: ` + shareUrl)}`}
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center gap-2 opacity-30 hover:opacity-100 transition-all duration-500"
@@ -81,7 +82,7 @@ export default function Footer() {
 
         {/* Right: Location & Wind */}
         <div className="flex flex-col items-center md:items-end">
-          <span className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">Tarifa, Spain</span>
+          <span className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em]">{fincaData.subtitle}, {fincaData.location.country}</span>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">{wind.speed} KTS • {wind.deg}° Wind</span>
           </div>

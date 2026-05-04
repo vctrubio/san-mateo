@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Plane, Ship, MapPin, Mail } from 'lucide-react';
+import fincaData from '../../finca.json';
 
 type Host = {
   name: string;
@@ -12,27 +13,12 @@ type Host = {
   haloClass: string;
 };
 
-const hosts: Host[] = [
-  {
-    name: 'David',
-    role: 'Estate Owner',
-    quote: "I've set up San Mateo so others can enjoy what I've been coming for the last 40 years.",
-    image: '/images/david.png',
-    haloClass: 'bg-sand',
-  },
-  {
-    name: 'Tano',
-    role: 'Jefe de Finca',
-    quote: 'He will make sure nothing is missing during your stay.',
-    image: '/images/tano.png',
-    haloClass: 'bg-sky-100',
-  },
-];
+const hosts: Host[] = fincaData.hosts;
 
 function AboutBackgroundText() {
   return (
     <div className="absolute top-0 right-0 text-[20vw] font-bold text-slate-50 select-none pointer-events-none leading-none -mr-12 -mt-12 uppercase tracking-tighter">
-      Tarifa
+      {fincaData.subtitle}
     </div>
   );
 }
@@ -61,7 +47,7 @@ function SpiritSection() {
           <div className="pt-4">
             <h4 className="text-sm font-bold uppercase tracking-widest text-slate-900 mb-2">300+ Days of Wind</h4>
             <p className="text-slate-500 leading-relaxed max-w-sm">
-              As the windy capital of the world, Tarifa isn't just a location-it's an energy. A sanctuary where the elements dictate the pace of life.
+              {fincaData.location.description}
             </p>
           </div>
         </div>
@@ -83,14 +69,12 @@ function TravelGrid() {
         <Plane className="w-5 h-5 text-slate-300 mb-6 group-hover:text-ocean transition-colors" />
         <h3 className="font-mono text-xs uppercase tracking-widest text-slate-400 mb-2">Arrival</h3>
         <div className="space-y-4">
-          <div>
-            <span className="block text-lg font-bold text-slate-900">Malaga (AGP)</span>
-            <span className="text-xs text-slate-500 uppercase">150 km | 1h 45m drive</span>
-          </div>
-          <div>
-            <span className="block text-lg font-bold text-slate-900">Sevilla (SVQ)</span>
-            <span className="text-xs text-slate-500 uppercase">200 km | 2h 15m drive</span>
-          </div>
+          {fincaData.travel.airports.map((airport) => (
+            <div key={airport.name}>
+              <span className="block text-lg font-bold text-slate-900">{airport.name}</span>
+              <span className="text-xs text-slate-500 uppercase">{airport.distance} | {airport.time}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -98,10 +82,10 @@ function TravelGrid() {
         <Ship className="w-5 h-5 text-slate-300 mb-6 group-hover:text-ocean transition-colors" />
         <h3 className="font-mono text-xs uppercase tracking-widest text-slate-400 mb-2">The Strait</h3>
         <div>
-          <span className="block text-lg font-bold text-slate-900">Tangier (TNG)</span>
+          <span className="block text-lg font-bold text-slate-900">{fincaData.travel.strait.name}</span>
           <p className="text-xs text-slate-500 leading-relaxed mt-2 uppercase">
-            Morocco • 45m Ferry Crossing <br />
-            <span className="text-ocean font-bold">1 Hour Time Difference</span>
+            {fincaData.travel.strait.country} • {fincaData.travel.strait.time} <br />
+            <span className="text-ocean font-bold">{fincaData.travel.strait.difference}</span>
           </p>
         </div>
       </div>
@@ -115,15 +99,15 @@ function ContactCard() {
   return (
     <div className="bg-slate-900 p-8 md:col-span-2 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
       <div>
-        <h3 className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/40 mb-4">Connect with San Mateo</h3>
+        <h3 className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/40 mb-4">Connect with {fincaData.name}</h3>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <MapPin className="w-4 h-4 text-ocean" />
-            <span className="text-sm">Tarifa, Spain</span>
+            <span className="text-sm">{fincaData.subtitle}, {fincaData.location.country}</span>
           </div>
           <div className="flex items-center gap-3">
             <Mail className="w-4 h-4 text-ocean" />
-            <span className="text-sm">hello@fincasanmateo.com</span>
+            <span className="text-sm">{fincaData.contact.email}</span>
           </div>
         </div>
       </div>
@@ -165,7 +149,7 @@ function HostsSpotlight() {
     >
       <div className="flex items-center gap-4">
         <div className="h-px grow bg-slate-100" />
-        <span className="text-[10px] font-mono text-slate-300 uppercase tracking-[0.4em]">The Souls of San Mateo</span>
+        <span className="text-[10px] font-mono text-slate-300 uppercase tracking-[0.4em]">The Souls of {fincaData.name}</span>
         <div className="h-px grow bg-slate-100" />
       </div>
 
