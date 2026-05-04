@@ -13,14 +13,12 @@ DROP TABLE IF EXISTS stripe_webhook_events CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
 DROP TABLE IF EXISTS booking_fees CASCADE;
 DROP TABLE IF EXISTS bookings CASCADE;
-DROP TABLE IF EXISTS guests CASCADE;
 DROP TABLE IF EXISTS property_fees CASCADE;
 DROP TABLE IF EXISTS fee_types CASCADE;
 DROP TABLE IF EXISTS property_amenities CASCADE;
 DROP TABLE IF EXISTS amenities CASCADE;
 DROP TABLE IF EXISTS property_photos CASCADE;
 DROP TABLE IF EXISTS properties CASCADE;
-DROP TABLE IF EXISTS fincas CASCADE;
 
 CREATE TABLE "user" (
     id              VARCHAR(36) PRIMARY KEY,
@@ -83,34 +81,8 @@ CREATE TABLE "verification" (
 
 CREATE INDEX idx_verification_identifier ON "verification"(identifier);
 
-CREATE TABLE fincas (
-    id                VARCHAR(36) PRIMARY KEY,
-    slug              VARCHAR(255) UNIQUE NOT NULL,
-    name              VARCHAR(255) NOT NULL,
-    description       TEXT,
-    address_line1     VARCHAR(255) NOT NULL,
-    address_line2     VARCHAR(255),
-    city              VARCHAR(255) NOT NULL,
-    region            VARCHAR(255),
-    country           CHAR(2) NOT NULL,
-    postal_code       VARCHAR(50),
-    latitude          DECIMAL(9,6),
-    longitude         DECIMAL(9,6),
-    timezone          VARCHAR(50) NOT NULL DEFAULT 'Europe/Madrid',
-    google_place_id   VARCHAR(255),
-    contact_email     VARCHAR(255),
-    contact_phone     VARCHAR(50),
-    website_url       VARCHAR(255),
-    check_in_time     TIME NOT NULL DEFAULT '15:00:00',
-    check_out_time    TIME NOT NULL DEFAULT '11:00:00',
-    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at        TIMESTAMP NULL
-);
-
 CREATE TABLE properties (
     id                 VARCHAR(36) PRIMARY KEY,
-    finca_id           VARCHAR(36) NOT NULL,
     slug               VARCHAR(255) UNIQUE NOT NULL,
     name               VARCHAR(255) NOT NULL,
     description        TEXT,
@@ -124,14 +96,12 @@ CREATE TABLE properties (
     beds               INT NOT NULL DEFAULT 0,
     bathrooms          DECIMAL(3,1) NOT NULL DEFAULT 0,
     base_price_cents   INT NOT NULL CHECK (base_price_cents >= 0),
-    currency           CHAR(3) NOT NULL DEFAULT 'EUR',
     min_nights         INT NOT NULL DEFAULT 1,
     deposit_percentage INT NOT NULL DEFAULT 50,
     balance_due_days_before_checkin INT NOT NULL DEFAULT 14,
     created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at         TIMESTAMP NULL,
-    FOREIGN KEY (finca_id) REFERENCES fincas(id) ON DELETE RESTRICT
+    deleted_at         TIMESTAMP NULL
 );
 
 CREATE TABLE property_photos (
@@ -180,7 +150,6 @@ CREATE TABLE property_fees (
     calculation     VARCHAR(50) NOT NULL,
     amount_cents    INT NOT NULL DEFAULT 0,
     percentage_bps  INT,
-    currency        CHAR(3) NOT NULL DEFAULT 'EUR',
     is_optional     BOOLEAN NOT NULL DEFAULT FALSE,
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
     position        INT NOT NULL DEFAULT 0,
@@ -194,34 +163,16 @@ CREATE TABLE property_fees (
     )
 );
 
-CREATE TABLE guests (
-    id                 VARCHAR(36) PRIMARY KEY,
-    email              VARCHAR(255) UNIQUE NOT NULL,
-    first_name         VARCHAR(255),
-    last_name          VARCHAR(255),
-    phone              VARCHAR(50),
-    country            CHAR(2),
-    preferred_language CHAR(2) DEFAULT 'en',
-    stripe_customer_id VARCHAR(255) UNIQUE,
-    notes              TEXT,
-    user_id            VARCHAR(255) UNIQUE,
-    created_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE bookings (
     id                             VARCHAR(36) PRIMARY KEY,
     reference                      VARCHAR(50) UNIQUE NOT NULL,
     property_id                    VARCHAR(36) NOT NULL,
-    guest_id                       VARCHAR(36) NOT NULL,
+    user_id                        VARCHAR(36) NOT NULL,
     check_in                       DATE NOT NULL,
     check_out                      DATE NOT NULL,
     nights                         INT NOT NULL,
-    num_adults                     INT NOT NULL DEFAULT 1,
-    num_children                   INT NOT NULL DEFAULT 0,
-    num_infants                    INT NOT NULL DEFAULT 0,
+    guests                         JSON NOT NULL,
 
-    currency                       CHAR(3) NOT NULL,
     nightly_rate_cents             INT NOT NULL,
     accommodation_cents            INT NOT NULL,
     fees_cents                     INT NOT NULL DEFAULT 0,
@@ -247,9 +198,8 @@ CREATE TABLE bookings (
     updated_at                     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
-    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE RESTRICT,
+    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE RESTRICT,
     CHECK (check_out > check_in),
-    CHECK (num_adults >= 1),
     CHECK (nights > 0)
 );
 
@@ -262,7 +212,6 @@ CREATE TABLE booking_fees (
     calculation       VARCHAR(50) NOT NULL,
     amount_cents      INT NOT NULL,
     percentage_bps    INT,
-    currency          CHAR(3) NOT NULL,
     is_optional       BOOLEAN NOT NULL DEFAULT FALSE,
     is_admin_override BOOLEAN NOT NULL DEFAULT FALSE,
     created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -275,7 +224,6 @@ CREATE TABLE payments (
     booking_id               VARCHAR(36) NOT NULL,
     kind                     VARCHAR(50) NOT NULL,
     amount_cents             INT NOT NULL,
-    currency                 CHAR(3) NOT NULL,
     status                   VARCHAR(50) NOT NULL DEFAULT 'pending',
     due_at                   TIMESTAMP,
     paid_at                  TIMESTAMP,
@@ -303,7 +251,7 @@ CREATE TABLE reviews (
     id                  VARCHAR(36) PRIMARY KEY,
     booking_id          VARCHAR(36) NOT NULL UNIQUE,
     property_id         VARCHAR(36) NOT NULL,
-    guest_id            VARCHAR(36) NOT NULL,
+    user_id             VARCHAR(36) NOT NULL,
     rating_overall      INT NOT NULL,
     rating_cleanliness  INT,
     rating_accuracy     INT,
@@ -319,7 +267,7 @@ CREATE TABLE reviews (
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE RESTRICT,
     FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE RESTRICT,
-    FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE RESTRICT,
+    FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE RESTRICT,
     CHECK (rating_overall BETWEEN 1 AND 5)
 );
 
@@ -332,19 +280,18 @@ CREATE TABLE stripe_webhook_events (
     received_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_properties_finca ON properties(finca_id);
 CREATE INDEX idx_properties_status ON properties(status);
 CREATE INDEX idx_photos_property ON property_photos(property_id, position);
 CREATE INDEX idx_property_fees_active ON property_fees(property_id, is_active);
 CREATE INDEX idx_bookings_property_dates ON bookings(property_id, check_in, check_out);
 CREATE INDEX idx_bookings_status ON bookings(status);
-CREATE INDEX idx_bookings_guest ON bookings(guest_id);
+CREATE INDEX idx_bookings_user ON bookings(user_id);
 CREATE INDEX idx_booking_fees_booking ON booking_fees(booking_id);
 CREATE INDEX idx_payments_booking ON payments(booking_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_booking_events_booking ON booking_events(booking_id, created_at);
 CREATE INDEX idx_reviews_property_published ON reviews(property_id, status);
-CREATE INDEX idx_reviews_guest ON reviews(guest_id);
+CREATE INDEX idx_reviews_user ON reviews(user_id);
 
 CREATE OR REPLACE VIEW v_booking_payment_status AS
 SELECT
@@ -386,17 +333,17 @@ WHERE p.deleted_at IS NULL;
 
 CREATE OR REPLACE VIEW v_guest_summary AS
 SELECT
-    g.id AS guest_id,
-    g.email,
-    g.first_name,
-    g.last_name,
+    u.id AS user_id,
+    u.email,
+    u.name AS full_name,
     SUM(CASE WHEN b.status IN ('completed', 'checked_out') THEN 1 ELSE 0 END) AS stays_completed,
     SUM(CASE WHEN b.status IN ('confirmed', 'checked_in') THEN 1 ELSE 0 END) AS stays_upcoming,
     SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) AS stays_cancelled,
     COALESCE(SUM(CASE WHEN b.status IN ('completed', 'checked_out') THEN b.total_cents ELSE 0 END), 0) AS lifetime_spend_cents,
     ROUND(AVG(CASE WHEN r.status = 'published' THEN r.rating_overall ELSE NULL END), 2) AS avg_rating_given,
     MAX(b.check_out) AS last_stay_ended_on
-FROM guests g
-LEFT JOIN bookings b ON b.guest_id = g.id
-LEFT JOIN reviews r ON r.guest_id = g.id
-GROUP BY g.id, g.email, g.first_name, g.last_name;
+FROM "user" u
+LEFT JOIN bookings b ON b.user_id = u.id
+LEFT JOIN reviews r ON r.user_id = u.id
+WHERE EXISTS (SELECT 1 FROM bookings WHERE user_id = u.id)
+GROUP BY u.id, u.email, u.name;

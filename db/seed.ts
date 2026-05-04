@@ -40,43 +40,11 @@ async function main() {
       'amenities',
       'property_photos',
       'properties',
-      'guests',
-      'fincas',
       'fee_types',
     ]) {
       await conn.execute(`DELETE FROM ${table}`);
     }
     await conn.execute('SET FOREIGN_KEY_CHECKS = 1');
-
-    const fincaId = makeId();
-    await conn.execute(
-      `INSERT INTO fincas (
-        id, slug, name, description, address_line1, address_line2, city, region, country,
-        postal_code, latitude, longitude, timezone, google_place_id, contact_email,
-        contact_phone, website_url, check_in_time, check_out_time
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        fincaId,
-        'finca-san-mateo',
-        'Finca San Mateo',
-        'A coastal estate with a simple, polished booking experience: browse, book, pay, and review from one model.',
-        'Carretera Nacional 340, Km 75',
-        'Casa Blanca',
-        'Tarifa',
-        'Andalucia',
-        'ES',
-        '11380',
-        36.0469,
-        -5.6318,
-        'Europe/Madrid',
-        'place_san_mateo_demo',
-        'hello@fincasanmateo.test',
-        '+34 956 000 123',
-        'https://sanmateo.test',
-        '15:00:00',
-        '11:00:00',
-      ]
-    );
 
     const propertySeeds: PropertySeed[] = [
       {
@@ -156,13 +124,12 @@ async function main() {
     for (const property of propertySeeds) {
       await conn.execute(
         `INSERT INTO properties (
-          id, finca_id, slug, name, description, property_type, status, map_x, map_y, map_z,
-          max_guests, bedrooms, beds, bathrooms, base_price_cents, currency, min_nights,
+          id, slug, name, description, property_type, status, map_x, map_y, map_z,
+          max_guests, bedrooms, beds, bathrooms, base_price_cents, min_nights,
           deposit_percentage, balance_due_days_before_checkin
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           property.id,
-          fincaId,
           property.slug,
           property.name,
           property.description,
@@ -176,7 +143,6 @@ async function main() {
           property.beds,
           property.bathrooms,
           property.basePriceCents,
-          'EUR',
           property.minNights,
           property.depositPercentage,
           property.balanceDueDaysBeforeCheckin,
@@ -265,9 +231,9 @@ async function main() {
       }
       await conn.execute(
         `INSERT INTO property_fees (
-          id, property_id, fee_type_id, name, calculation, amount_cents, currency,
+          id, property_id, fee_type_id, name, calculation, amount_cents,
           is_optional, is_active, position
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           property.id,
@@ -275,7 +241,6 @@ async function main() {
           row.name,
           row.calculation,
           row.amount_cents,
-          'EUR',
           false,
           true,
           rows.length - 1,
@@ -303,56 +268,46 @@ async function main() {
       );
     }
 
-    const guestSeeds = [
+    const userSeeds = [
       {
         id: makeId(),
         email: 'amelia@example.com',
-        firstName: 'Amelia',
-        lastName: 'Carver',
-        phone: '+44 7700 900111',
-        country: 'GB',
-        preferredLanguage: 'en',
-        stripeCustomerId: 'cus_demo_001',
+        name: 'Amelia Carver',
+        password: '2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67',
       },
       {
         id: makeId(),
         email: 'diego@example.com',
-        firstName: 'Diego',
-        lastName: 'Ruiz',
-        phone: '+34 600 111 222',
-        country: 'ES',
-        preferredLanguage: 'es',
-        stripeCustomerId: 'cus_demo_002',
+        name: 'Diego Ruiz',
+        password: '2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67',
       },
       {
         id: makeId(),
         email: 'nora@example.com',
-        firstName: 'Nora',
-        lastName: 'Peters',
-        phone: '+49 151 222 3333',
-        country: 'DE',
-        preferredLanguage: 'de',
-        stripeCustomerId: 'cus_demo_003',
+        name: 'Nora Peters',
+        password: '2fc5aa496e04f89963c2cd1d7826a159:aaadc8d0544f5c6673f43b3af4548a74da2a4d18eb6c6cf850c391ef4b06acc1250a3f9db439e7ac93de60b0f3246c7c03e3d9bfd1a1b8f5ac2c08c3609cdf67',
       },
     ] as const;
 
-    for (const guest of guestSeeds) {
+    for (const u of userSeeds) {
       await conn.execute(
-        `INSERT INTO guests (
-          id, email, first_name, last_name, phone, country, preferred_language,
-          stripe_customer_id, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          guest.id,
-          guest.email,
-          guest.firstName,
-          guest.lastName,
-          guest.phone,
-          guest.country,
-          guest.preferredLanguage,
-          guest.stripeCustomerId,
-          'Seeded guest for dashboard illustration',
-        ]
+        `INSERT INTO "user" (
+          id, name, email, "emailVerified", role, banned
+        ) VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          role = EXCLUDED.role,
+          banned = EXCLUDED.banned`,
+        [u.id, u.name, u.email, true, "user", false]
+      );
+
+      await conn.execute(
+        `INSERT INTO "account" (
+          id, "accountId", "providerId", "userId", password
+        ) VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (id) DO UPDATE SET
+          password = EXCLUDED.password`,
+        [makeId(), u.email, "credential", u.id, u.password]
       );
     }
 
@@ -429,9 +384,7 @@ async function main() {
       checkIn: string;
       checkOut: string;
       nights: number;
-      numAdults: number;
-      numChildren: number;
-      numInfants: number;
+      guests: { adults: number; children: number; infants: number; hasPets: boolean };
       status: string;
       source: string;
       nightlyRateCents: number;
@@ -468,9 +421,7 @@ async function main() {
         checkIn: '2026-05-12',
         checkOut: '2026-05-19',
         nights: 7,
-        numAdults: 4,
-        numChildren: 1,
-        numInfants: 0,
+        guests: { adults: 4, children: 1, infants: 0, hasPets: false },
         status: 'confirmed',
         source: 'direct',
         nightlyRateCents: 125000,
@@ -495,9 +446,7 @@ async function main() {
         checkIn: '2026-03-03',
         checkOut: '2026-03-07',
         nights: 4,
-        numAdults: 2,
-        numChildren: 0,
-        numInfants: 0,
+        guests: { adults: 2, children: 0, infants: 0, hasPets: false },
         status: 'completed',
         source: 'admin',
         nightlyRateCents: 92000,
@@ -532,9 +481,7 @@ async function main() {
         checkIn: '2026-07-08',
         checkOut: '2026-07-11',
         nights: 3,
-        numAdults: 2,
-        numChildren: 0,
-        numInfants: 0,
+        guests: { adults: 2, children: 0, infants: 0, hasPets: false },
         status: 'pending',
         source: 'direct',
         nightlyRateCents: 64000,
@@ -558,9 +505,9 @@ async function main() {
 
     for (const bookingSeed of bookingSeeds) {
       const property = propertySeeds.find((item) => item.slug === bookingSeed.propertySlug);
-      const guest = guestSeeds.find((item) => item.email === bookingSeed.guestEmail);
+      const user = userSeeds.find((item) => item.email === bookingSeed.guestEmail);
 
-      if (!property || !guest) {
+      if (!property || !user) {
         throw new Error(`Missing seed dependency for ${bookingSeed.reference}`);
       }
 
@@ -569,26 +516,23 @@ async function main() {
 
       await conn.execute(
         `INSERT INTO bookings (
-          id, reference, property_id, guest_id, check_in, check_out, nights,
-          num_adults, num_children, num_infants, currency, nightly_rate_cents,
+          id, reference, property_id, user_id, check_in, check_out, nights,
+          guests, nightly_rate_cents,
           accommodation_cents, fees_cents, taxes_cents, discount_cents,
           length_of_stay_discount_cents, length_of_stay_discount_name,
           total_cents, deposit_percentage, deposit_cents, balance_cents,
           balance_due_at, status, source, guest_message, admin_notes,
           cancelled_at, cancellation_reason, confirmed_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           bookingId,
           bookingSeed.reference,
           property.id,
-          guest.id,
+          user.id,
           bookingSeed.checkIn,
           bookingSeed.checkOut,
           bookingSeed.nights,
-          bookingSeed.numAdults,
-          bookingSeed.numChildren,
-          bookingSeed.numInfants,
-          'EUR',
+          JSON.stringify(bookingSeed.guests),
           bookingSeed.nightlyRateCents,
           bookingSeed.accommodationCents,
           bookingSeed.feesCents,
@@ -616,8 +560,8 @@ async function main() {
         await conn.execute(
           `INSERT INTO booking_fees (
             id, booking_id, property_fee_id, fee_type_key, name, calculation,
-            amount_cents, percentage_bps, currency, is_optional, is_admin_override
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            amount_cents, percentage_bps, is_optional, is_admin_override
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             makeId(),
             bookingId,
@@ -627,7 +571,6 @@ async function main() {
             feeRow.calculation,
             feeRow.amount_cents,
             null,
-            'EUR',
             false,
             false,
           ]
@@ -639,15 +582,14 @@ async function main() {
 
       await conn.execute(
         `INSERT INTO payments (
-          id, booking_id, kind, amount_cents, currency, status, due_at,
+          id, booking_id, kind, amount_cents, status, due_at,
           paid_at, stripe_payment_intent_id, stripe_charge_id, stripe_payment_method
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           makeId(),
           bookingId,
           'deposit',
           bookingSeed.depositCents,
-          'EUR',
           depositSucceeded ? 'succeeded' : 'pending',
           bookingSeed.balanceDueAt,
           depositSucceeded ? '2026-04-22 09:40:00' : null,
@@ -659,15 +601,14 @@ async function main() {
 
       await conn.execute(
         `INSERT INTO payments (
-          id, booking_id, kind, amount_cents, currency, status, due_at,
+          id, booking_id, kind, amount_cents, status, due_at,
           paid_at, stripe_payment_intent_id, stripe_charge_id, stripe_payment_method
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           makeId(),
           bookingId,
           'balance',
           bookingSeed.balanceCents,
-          'EUR',
           balanceSucceeded ? 'succeeded' : 'pending',
           bookingSeed.status === 'completed' ? '2026-03-06 12:00:00' : bookingSeed.balanceDueAt,
           balanceSucceeded ? '2026-03-07 10:10:00' : null,
@@ -694,7 +635,7 @@ async function main() {
       if (bookingSeed.review) {
         await conn.execute(
           `INSERT INTO reviews (
-            id, booking_id, property_id, guest_id, rating_overall, rating_cleanliness,
+            id, booking_id, property_id, user_id, rating_overall, rating_cleanliness,
             rating_accuracy, rating_location, rating_value, public_comment,
             private_feedback, host_reply, host_replied_at, host_replied_by, status
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -702,7 +643,7 @@ async function main() {
             makeId(),
             bookingId,
             property.id,
-            guest.id,
+            user.id,
             bookingSeed.review.overall,
             bookingSeed.review.cleanliness,
             bookingSeed.review.accuracy,

@@ -1,0 +1,15 @@
+{
+  "id": "san-mateo",
+  "name": "Finca San Mateo",
+  "description": "A coastal haven in the south of Spain, perfect for surf and wind lovers. Surrounded by nature and the Atlantic Ocean.",
+  "location": {
+    "city": "Tarifa",
+    "country": "Spain",
+    "timezone": "Europe/Madrid"
+  },
+  "contact": {
+    "phone": "+34 600 000 000",
+    "email": "hello@fincasanmateo.com",
+    "website": "https://fincasanmateo.com"
+  }
+}
