@@ -1,5 +1,5 @@
-import React from 'react';
 import Link from 'next/link';
+import fincaData from '../../finca.json';
 
 function Wireframe() {
   return (
@@ -64,7 +64,7 @@ function Title() {
       <div className="relative z-10 inline-flex flex-col items-center group">
         {/* Line 1: San Mateo - Bold and Tight */}
         <h1 className="text-6xl md:text-9xl font-bold tracking-tighter text-slate-900 leading-[0.8] uppercase">
-          San Mateo
+          {fincaData.name}
         </h1>
 
         {/* Line 2: FINCA - The XS connector with lines */}
@@ -78,7 +78,7 @@ function Title() {
 
         {/* Line 3: Tarifa - Tracked out to match the width of Line 1 */}
         <h2 className="text-6xl md:text-9xl font-bold tracking-[0.28em] text-slate-900 leading-[0.8] uppercase ml-[0.28em]">
-          Tarifa
+          {fincaData.subtitle}
         </h2>
 
       </div>
